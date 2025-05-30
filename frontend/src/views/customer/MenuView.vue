@@ -105,15 +105,15 @@
     <!-- 底部导航 -->
     <BottomNavigation />
     
-    <!-- 购物车浮动按钮 -->
-    <div class="cart-float" v-if="cartItemCount > 0">
+    <!-- 移除购物车浮动按钮 -->
+    <!-- <div class="cart-float" v-if="cartItemCount > 0">
       <div class="cart-btn" @click="goToCart">
         <span class="cart-icon">🛒</span>
         <div class="cart-badge" v-if="cartItemCount > 0">
           {{ cartItemCount }}
         </div>
       </div>
-    </div>
+    </div> -->
   </div>
 </template>
 
@@ -154,8 +154,8 @@ const handleTouchStart = (e) => {
   touchStartY.value = e.touches[0].clientY
   isDragging.value = true
   
-  // 阻止默认行为，避免与页面滚动冲突
-  e.preventDefault()
+  // 移除这行，不要在触摸开始时就阻止默认行为
+  // e.preventDefault()
 }
 
 const handleTouchMove = (e) => {
@@ -169,7 +169,7 @@ const handleTouchMove = (e) => {
   // 如果垂直滑动距离小于限制，则处理水平滑动
   if (deltaY < maxVerticalDistance) {
     translateX.value = deltaX * 0.4 // 增加阻尼效果的响应度
-    e.preventDefault() // 阻止页面滚动
+    e.preventDefault() // 只在确实进行水平滑动时阻止页面滚动
   } else {
     // 如果垂直滑动距离过大，取消水平滑动
     isDragging.value = false
@@ -311,6 +311,11 @@ const goToCart = () => {
 
 // 跳转到菜品详情页
 const goToDishDetail = (dishId) => {
+  console.log('点击菜品，ID:', dishId) // 添加调试信息
+  if (!dishId) {
+    console.error('菜品ID无效')
+    return
+  }
   router.push(`/dish/${dishId}`)
 }
 </script>

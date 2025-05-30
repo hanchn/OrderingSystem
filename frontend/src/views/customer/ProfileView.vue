@@ -275,15 +275,15 @@
     <!-- 底部导航 -->
     <BottomNavigation />
     
-    <!-- 购物车浮动按钮 -->
-    <div class="cart-float" v-if="cartItemCount > 0">
+    <!-- 移除购物车浮动按钮 -->
+    <!-- <div class="cart-float" v-if="cartItemCount > 0">
       <div class="cart-btn" @click="goToCart">
         <span class="cart-icon">🛒</span>
         <div class="cart-badge" v-if="cartItemCount > 0">
           {{ cartItemCount }}
         </div>
       </div>
-    </div>
+    </div> -->
   </div>
 </template>
 
@@ -330,7 +330,7 @@ const currentBill = computed(() => {
 
 // 购物车商品数量
 const cartItemCount = computed(() => {
-  return cartStore.totalQuantity.value || 0
+  return cartStore.itemCount.value || 0
 })
 
 // 跳转到购物车

@@ -40,7 +40,8 @@ export function getDishes(categoryId) {
 // 根据菜品ID获取菜品详情
 export function getDishDetail(dishId) {
   if (isTestMode()) {
-    const dish = mockData.dishes.find(dish => dish.id === dishId)
+    // 确保dishId为数字类型进行比较
+    const dish = mockData.dishes.find(dish => dish.id === parseInt(dishId))
     return createMockResponse(dish, dish ? '获取成功' : '菜品不存在')
   }
   

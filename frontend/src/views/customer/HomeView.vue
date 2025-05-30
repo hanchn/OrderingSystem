@@ -176,14 +176,15 @@
     <!-- 底部导航 -->
     <BottomNavigation />
     
-    <div class="cart-float" v-if="cartItemCount > 0">
+    <!-- 移除购物车浮动按钮 -->
+    <!-- <div class="cart-float" v-if="cartItemCount > 0">
       <div class="cart-btn" @click="viewCart">
         <span class="cart-icon">🛒</span>
         <div class="cart-badge" v-if="cartItemCount > 0">
           {{ cartItemCount }}
         </div>
       </div>
-    </div>
+    </div> -->
   </div>
 </template>
 

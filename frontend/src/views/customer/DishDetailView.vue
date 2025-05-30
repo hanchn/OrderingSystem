@@ -106,13 +106,13 @@
       </div>
     </div>
 
-    <!-- 添加购物车悬浮按钮 -->
-    <div class="cart-float" v-if="cartItemCount > 0" @click="goToCart">
+    <!-- 移除购物车浮动按钮 -->
+    <!-- <div class="cart-float" v-if="cartItemCount > 0" @click="goToCart">
       <div class="cart-btn">
         <span class="cart-icon">🛒</span>
         <span class="cart-badge" v-if="cartItemCount">{{ cartItemCount }}</span>
       </div>
-    </div>
+    </div> -->
 
     <!-- 数量选择和添加到购物车 -->
     <div class="action-section">
