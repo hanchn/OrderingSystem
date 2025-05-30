@@ -91,7 +91,7 @@
                 </div>
                 <button 
                   class="add-btn"
-                  @click="addToCart(dish)"
+                  @click.stop="addToCart(dish)"
                 >
                   <span class="btn-icon">+</span>
                 </button>
