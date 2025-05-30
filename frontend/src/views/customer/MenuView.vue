@@ -120,27 +120,24 @@
 <script setup>
 import { ref, onMounted, computed, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-dd .import { ElMessage } from 'element-plus'
-aimport { getCategories, getDishes } from '@/api/dish'
-// At the top of script setup, replace the cartManager import and usage:
+import { ElMessage } from 'element-plus'
+import { getCategories, getDishes } from '@/api/dish'
 import { useCartStore } from '@/utils/cart'
-
-// Replace cartItems and related code with:
-const cartStore = useCartStore()
-const cartItems = cartStore.items
-const cartItemCount = cartStore.itemCount
-
-// Remove the watch function and manual cartItems management
-// The reactive store will handle updates automatically
 import { tableManager } from '@/utils/table'
 import BottomNavigation from '@/components/BottomNavigation.vue'
 
 const router = useRouter()
 const route = useRoute()
+
+// 使用新的购物车store
+const cartStore = useCartStore()
+// 恢复cartItemCount的定义
+const cartItemCount = computed(() => cartStore.itemCount)
+
+// Component state
 const categories = ref([])
 const dishes = ref([])
 const activeCategory = ref('')
-const cartItems = ref([])
 const tableDisplay = ref('')
 
 // 滑动相关
@@ -148,8 +145,8 @@ const touchStartX = ref(0)
 const touchStartY = ref(0)
 const translateX = ref(0)
 const isDragging = ref(false)
-const minSwipeDistance = 50  // 降低最小滑动距离，提高灵敏度
-const maxVerticalDistance = 80  // 减少垂直距离限制
+const minSwipeDistance = 50
+const maxVerticalDistance = 80
 
 // 触摸事件处理
 const handleTouchStart = (e) => {
@@ -208,7 +205,7 @@ const handleTouchEnd = (e) => {
   }
 }
 
-// 计算属性
+// 过滤菜品的计算属性
 const filteredDishes = computed(() => {
   if (!activeCategory.value) return dishes.value
   return dishes.value.filter(dish => 
@@ -216,21 +213,83 @@ const filteredDishes = computed(() => {
   )
 })
 
-// 计算属性
-const cartItemCount = computed(() => {
-  // Add null check to prevent the error
-  if (!cartItems.value || !Array.isArray(cartItems.value)) {
-    return 0
+// Fix the initTableInfo function
+const initTableInfo = () => {
+  // Initialize table info from URL query parameters
+  tableManager.initFromQuery(route.query)
+  
+  // Set the table display text using the correct method name
+  if (tableManager.isValid()) {
+    tableDisplay.value = tableManager.getSimpleDisplay() // or getTableDisplay() for full text
+  } else {
+    tableDisplay.value = '餐桌信息'
   }
-  return cartItems.value.reduce((total, item) => total + item.quantity, 0)
-})
-
-// 监听购物车变化 - Fix the watch to use the correct method
-const updateCartItems = () => {
-  cartItems.value = cartManager.getItems()
 }
 
-// Initialize cart items on mount
+// 在goToDishDetail函数之前添加以下函数
+
+// 加载分类数据
+const loadCategories = async () => {
+  try {
+    const response = await getCategories()
+    categories.value = response.data || []
+    if (categories.value.length > 0) {
+      activeCategory.value = categories.value[0].id.toString()
+    }
+  } catch (error) {
+    console.error('加载分类失败:', error)
+    ElMessage.error('加载分类失败')
+  }
+}
+
+// 加载菜品数据
+const loadDishes = async () => {
+  try {
+    const response = await getDishes()
+    dishes.value = response.data || []
+  } catch (error) {
+    console.error('加载菜品失败:', error)
+    ElMessage.error('加载菜品失败')
+  }
+}
+
+// 滚动到指定分类
+const scrollCategoryIntoView = () => {
+  // 实现分类滚动逻辑
+  nextTick(() => {
+    const activeElement = document.querySelector('.category-item.active')
+    if (activeElement) {
+      activeElement.scrollIntoView({ behavior: 'smooth', inline: 'center' })
+    }
+  })
+}
+
+// 切换分类
+const switchCategory = (categoryId) => {
+  activeCategory.value = categoryId.toString()
+  scrollCategoryIntoView()
+}
+
+// 切换到上一个或下一个分类
+const switchToCategory = (direction) => {
+  if (categories.value.length === 0) return
+  
+  const currentIndex = categories.value.findIndex(cat => cat.id.toString() === activeCategory.value)
+  let newIndex
+  
+  if (direction === 'prev') {
+    newIndex = currentIndex > 0 ? currentIndex - 1 : categories.value.length - 1
+  } else if (direction === 'next') {
+    newIndex = currentIndex < categories.value.length - 1 ? currentIndex + 1 : 0
+  } else {
+    return
+  }
+  
+  const newCategoryId = categories.value[newIndex].id.toString()
+  switchCategory(newCategoryId)
+}
+
+// 添加onMounted钩子
 onMounted(() => {
   initTableInfo()
   loadCategories()
@@ -241,13 +300,15 @@ onMounted(() => {
     scrollCategoryIntoView()
   })
 })
-// 移除 goToHome 方法
-// const goToHome = () => {
-//   router.push({
-//     path: '/',
-//     query: route.query
-//   })
-// }
+
+// 跳转到购物车
+const goToCart = () => {
+  router.push({
+    path: '/cart',
+    query: route.query
+  })
+}
+
 // 跳转到菜品详情页
 const goToDishDetail = (dishId) => {
   router.push(`/dish/${dishId}`)
