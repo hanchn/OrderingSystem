@@ -9,25 +9,28 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: to => {
-        // 如果有完整的参数，重定向到菜单页面并保持参数
-        const { brandId, companyId, shopId, desk } = to.query
-        if (shopId && desk) {
-          return { 
-            path: '/menu', 
-            query: { brandId, companyId, shopId, desk } 
-          }
-        }
-        return '/menu'
-      }
+      name: 'Home',
+      component: () => import('@/views/customer/HomeView.vue'),
+      meta: { title: '首页' }
     },
     {
       path: '/menu',
       name: 'Menu',
       component: () => import('@/views/customer/MenuView.vue'),
       meta: { title: '菜单' }
+    },
+    {
+      path: '/cart',
+      name: 'Cart',
+      component: () => import('@/views/customer/CartView.vue'),
+      meta: { title: '购物车' }
+    },
+    {
+      path: '/profile',
+      name: 'Profile',
+      component: () => import('@/views/customer/ProfileView.vue'),
+      meta: { title: '个人中心' }
     }
-    // Removed all other routes that reference non-existent files
   ]
 })
 
