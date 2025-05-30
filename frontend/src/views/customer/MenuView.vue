@@ -120,9 +120,18 @@
 <script setup>
 import { ref, onMounted, computed, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { getCategories, getDishes } from '@/api/dish'
-import { cartManager } from '@/utils/cart'
+dd .import { ElMessage } from 'element-plus'
+aimport { getCategories, getDishes } from '@/api/dish'
+// At the top of script setup, replace the cartManager import and usage:
+import { useCartStore } from '@/utils/cart'
+
+// Replace cartItems and related code with:
+const cartStore = useCartStore()
+const cartItems = cartStore.items
+const cartItemCount = cartStore.itemCount
+
+// Remove the watch function and manual cartItems management
+// The reactive store will handle updates automatically
 import { tableManager } from '@/utils/table'
 import BottomNavigation from '@/components/BottomNavigation.vue'
 
@@ -209,161 +218,23 @@ const filteredDishes = computed(() => {
 
 // 计算属性
 const cartItemCount = computed(() => {
+  // Add null check to prevent the error
+  if (!cartItems.value || !Array.isArray(cartItems.value)) {
+    return 0
+  }
   return cartItems.value.reduce((total, item) => total + item.quantity, 0)
 })
 
-// 跳转到购物车
-const goToCart = () => {
-  router.push({ path: '/cart', query: route.query })
-}
-
-// 监听购物车变化
-watch(() => cartManager.items, (newItems) => {
-  cartItems.value = newItems
-}, { deep: true, immediate: true })
-
-// 初始化桌号信息
-const initTableInfo = () => {
-  tableManager.initFromQuery(route.query)
-  if (!tableManager.isValid()) {
-    tableManager.restoreFromStorage()
-  }
-  tableDisplay.value = tableManager.getTableDisplay()
-}
-
-// 加载分类
-const loadCategories = async () => {
-  try {
-    const response = await getCategories()
-    if (response.code === 200) {
-      categories.value = response.data
-      if (categories.value.length > 0) {
-        activeCategory.value = categories.value[0].id.toString()
-      }
-    } else {
-      ElMessage.error('加载分类失败')
-    }
-  } catch (error) {
-    console.error('加载分类失败:', error)
-    ElMessage.error('加载分类失败')
-  }
-}
-
-// 加载菜品
-const loadDishes = async () => {
-  try {
-    const response = await getDishes()
-    if (response.code === 200) {
-      dishes.value = response.data.map(dish => ({
-        ...dish,
-        imageLoaded: false
-      }))
-    } else {
-      ElMessage.error('加载菜品失败')
-    }
-  } catch (error) {
-    console.error('加载菜品失败:', error)
-    ElMessage.error('加载菜品失败')
-  }
-}
-
-// 图片加载处理
-const handleImageLoad = (e) => {
-  const dishId = e.target.closest('.dish-card').querySelector('.dish-name').textContent
-  const dish = dishes.value.find(d => d.name === dishId)
-  if (dish) {
-    dish.imageLoaded = true
-  }
-}
-
-const handleImageError = (e) => {
-  e.target.style.display = 'none'
-}
-
-// 添加到购物车
-const addToCart = (dish) => {
-  cartManager.addItem({
-    id: dish.id,
-    name: dish.name,
-    price: dish.price,
-    image: dish.image
-  })
+// 监听购物车变化 - Fix the watch to use the correct method
+const updateCartItems = () => {
   cartItems.value = cartManager.getItems()
-  
-  // 添加成功动画反馈
-  ElMessage({
-    message: `${dish.name} 已添加到购物车`,
-    type: 'success',
-    duration: 1500,
-    showClose: false
-  })
 }
 
-// 分类导航引用
-const categoryNavRef = ref(null)
-
-// 自动滚动到选中分类
-const scrollCategoryIntoView = () => {
-  nextTick(() => {
-    if (!categoryNavRef.value) return
-    
-    const activeElement = categoryNavRef.value.querySelector('.category-item.active')
-    if (!activeElement) return
-    
-    const container = categoryNavRef.value
-    const containerRect = container.getBoundingClientRect()
-    const elementRect = activeElement.getBoundingClientRect()
-    
-    // 计算元素相对于容器的位置
-    const elementLeft = elementRect.left - containerRect.left + container.scrollLeft
-    const elementWidth = elementRect.width
-    const containerWidth = containerRect.width
-    
-    // 计算目标滚动位置（让选中项居中）
-    const targetScrollLeft = elementLeft - (containerWidth - elementWidth) / 2
-    
-    // 平滑滚动到目标位置
-    container.scrollTo({
-      left: Math.max(0, targetScrollLeft),
-      behavior: 'smooth'
-    })
-  })
-}
-
-// 切换分类
-const switchCategory = (categoryId) => {
-  activeCategory.value = categoryId
-  scrollCategoryIntoView()
-}
-
-// 切换到指定分类
-const switchToCategory = (direction) => {
-  const currentIndex = categories.value.findIndex(
-    cat => cat.id.toString() === activeCategory.value
-  )
-  
-  let newIndex
-  if (direction === 'next') {
-    newIndex = currentIndex < categories.value.length - 1 ? currentIndex + 1 : 0
-  } else {
-    newIndex = currentIndex > 0 ? currentIndex - 1 : categories.value.length - 1
-  }
-  
-  activeCategory.value = categories.value[newIndex].id.toString()
-  scrollCategoryIntoView()
-}
-
-// 监听 activeCategory 变化，自动滚动
-watch(activeCategory, () => {
-  scrollCategoryIntoView()
-})
-
-// 在 onMounted 中添加
+// Initialize cart items on mount
 onMounted(() => {
   initTableInfo()
   loadCategories()
   loadDishes()
-  cartItems.value = cartManager.getItems()
   
   // 初始化后自动滚动到第一个分类
   nextTick(() => {
