@@ -176,7 +176,6 @@
     <!-- 底部导航 -->
     <BottomNavigation />
     
-    <!-- 购物车浮动按钮 -->
     <div class="cart-float" v-if="cartItemCount > 0">
       <div class="cart-btn" @click="viewCart">
         <span class="cart-icon">🛒</span>
@@ -870,4 +869,53 @@ onMounted(() => {
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+    /* 购物车浮动按钮 */
+    .cart-float {
+      position: fixed;
+      bottom: 30px;
+      right: 20px;
+      z-index: 1000;
+    }
+    
+    .cart-btn {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(255, 107, 107, 0.4);
+      position: relative;
+    }
+    
+    .cart-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 25px rgba(255, 107, 107, 0.6);
+    }
+    
+    .cart-icon {
+      font-size: 24px;
+      color: white;
+    }
+    
+    .cart-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: #2ecc71;
+      color: white;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+      border: 2px solid white;
+    }
 </style>
