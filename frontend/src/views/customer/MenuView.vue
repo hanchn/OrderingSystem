@@ -318,6 +318,14 @@ const goToDishDetail = (dishId) => {
   }
   router.push(`/dish/${dishId}`)
 }
+
+// 在 goToDishDetail 方法后面添加
+
+// 添加商品到购物车
+const addToCart = (dish) => {
+  cartStore.addItem(dish)
+  ElMessage.success(`${dish.name} 已添加到购物车`)
+}
 </script>
 
 <style scoped>

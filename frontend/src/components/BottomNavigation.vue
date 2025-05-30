@@ -4,6 +4,7 @@
       v-for="item in navItems" 
       :key="item.name"
       :class="['nav-item', { active: currentRoute === item.path }]"
+      :data-cart="item.name === 'cart' ? 'true' : undefined"
       @click="navigateTo(item.path)"
     >
       <div class="nav-icon">{{ item.icon }}</div>
@@ -14,13 +15,18 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useCartStore } from '@/utils/cart'
 
 const router = useRouter()
 const route = useRoute()
 const cartStore = useCartStore()
+
+// 组件挂载时恢复购物车数据
+onMounted(() => {
+  cartStore.restoreFromStorage()
+})
 
 const currentRoute = computed(() => route.path)
 
@@ -170,6 +176,66 @@ const navigateTo = (path) => {
   
   .nav-text {
     font-size: 11px;
+  }
+}
+
+/* 购物车跳跃动画 */
+.nav-item[data-cart].cart-bounce {
+  animation: cartBounce 0.6s ease-out;
+}
+
+@keyframes cartBounce {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  30% {
+    transform: translateY(-8px) scale(1.1);
+  }
+  50% {
+    transform: translateY(-12px) scale(1.15);
+  }
+  70% {
+    transform: translateY(-6px) scale(1.05);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 购物车图标接收动画 */
+.nav-item[data-cart].cart-bounce .nav-icon {
+  animation: iconReceive 0.6s ease-out;
+}
+
+@keyframes iconReceive {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.3) rotate(10deg);
+  }
+  70% {
+    transform: scale(1.1) rotate(-5deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/* 徽章弹跳动画 */
+.nav-item[data-cart].cart-bounce .nav-badge {
+  animation: badgePop 0.6s ease-out;
+}
+
+@keyframes badgePop {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.4);
+  }
+  100% {
+    transform: scale(1);
   }
 }
 </style>
