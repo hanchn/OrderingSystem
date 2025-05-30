@@ -2,6 +2,9 @@
   <div class="cart-container">
     <!-- 头部 -->
     <div class="cart-header">
+      <button class="home-btn" @click="goToHome">
+        <span class="home-icon">🏠</span>
+      </button>
       <button class="back-btn" @click="goBack">
         <span class="back-icon">←</span>
       </button>
@@ -35,7 +38,7 @@
           </div>
           <div class="item-info">
             <h3 class="item-name">{{ item.name }}</h3>
-            <p class="item-desc">{{ item.description }}</p>
+            <p class="item-desc">{{ item.description || '美味佳肴' }}</p>
             <div class="item-price">¥{{ item.price }}</div>
           </div>
           <div class="item-controls">
@@ -71,7 +74,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '@/utils/cart'
 import BottomNavigation from '@/components/BottomNavigation.vue'
@@ -79,9 +82,10 @@ import BottomNavigation from '@/components/BottomNavigation.vue'
 const router = useRouter()
 const cartStore = useCartStore()
 
-const cartItems = computed(() => cartStore.items)
-const totalItems = computed(() => cartStore.itemCount)
-const totalPrice = computed(() => cartStore.totalPrice)
+// 直接使用cartStore的computed属性，不需要再次包装
+const cartItems = computed(() => cartStore.items.value || [])
+const totalItems = computed(() => cartStore.itemCount.value || 0)
+const totalPrice = computed(() => cartStore.totalPrice.value || 0)
 
 const goBack = () => {
   router.go(-1)
@@ -106,12 +110,33 @@ const decreaseQuantity = (item) => {
 }
 
 const checkout = () => {
+  if (cartItems.value.length === 0) {
+    alert('购物车为空，请先添加商品')
+    return
+  }
+  
   // 这里可以跳转到结算页面或显示结算弹窗
-  alert('结算功能开发中...')
+  const total = totalPrice.value.toFixed(2)
+  if (confirm(`确认结算？\n总金额：¥${total}`)) {
+    alert('结算功能开发中...')
+  }
 }
 
 const handleImageError = (event) => {
   event.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjRjVGNUY1Ii8+Cjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjOTk5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7nvo7lkbPkvbPogZQ8L3RleHQ+Cjwvc3ZnPg=='
+}
+
+// 组件挂载时恢复购物车数据
+onMounted(() => {
+  cartStore.restoreFromStorage()
+})
+
+// 添加跳转到首页的方法
+const goToHome = () => {
+  router.push({
+    path: '/',
+    query: route.query
+  })
 }
 </script>
 
@@ -126,38 +151,65 @@ const handleImageError = (event) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px;
+  padding: 16px 20px;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
-.back-btn, .clear-btn {
-  background: none;
+.home-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
-  font-size: 16px;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  padding: 8px 12px;
-  border-radius: 8px;
   transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
-.back-btn:hover, .clear-btn:hover {
+.home-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+}
+
+.home-icon {
+  font-size: 18px;
+  color: white;
+}
+
+.back-btn {
   background: rgba(0, 0, 0, 0.1);
-}
-
-.back-icon {
-  font-size: 20px;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-left: 8px;
 }
 
 .page-title {
-  font-size: 20px;
-  font-weight: 600;
+  flex: 1;
+  text-align: center;
   margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
 }
 
 .clear-btn {
-  color: #e74c3c;
+  color: #ff6b6b;
+  font-weight: 500;
 }
 
 .cart-content {
@@ -168,18 +220,19 @@ const handleImageError = (event) => {
 .empty-cart {
   text-align: center;
   padding: 60px 20px;
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
   border-radius: 16px;
-  margin: 20px 0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
 .empty-icon {
-  font-size: 60px;
+  font-size: 64px;
   margin-bottom: 20px;
 }
 
 .empty-text {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
   color: #333;
   margin-bottom: 8px;
@@ -191,44 +244,53 @@ const handleImageError = (event) => {
 }
 
 .go-menu-btn {
-  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  padding: 12px 30px;
+  padding: 12px 24px;
   border-radius: 25px;
   font-size: 16px;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .go-menu-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .cart-items {
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
   border-radius: 16px;
   overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
 .cart-item {
   display: flex;
   align-items: center;
-  padding: 16px;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
 }
 
 .cart-item:last-child {
   border-bottom: none;
 }
 
+.cart-item:hover {
+  background: rgba(102, 126, 234, 0.05);
+}
+
 .item-image {
-  width: 60px;
-  height: 60px;
-  border-radius: 8px;
+  width: 80px;
+  height: 80px;
+  border-radius: 12px;
   overflow: hidden;
-  margin-right: 12px;
+  margin-right: 16px;
+  flex-shrink: 0;
 }
 
 .item-image img {
@@ -239,24 +301,21 @@ const handleImageError = (event) => {
 
 .item-info {
   flex: 1;
-  margin-right: 12px;
+  margin-right: 16px;
 }
 
 .item-name {
+  margin: 0 0 8px 0;
   font-size: 16px;
   font-weight: 600;
-  margin: 0 0 4px 0;
   color: #333;
 }
 
 .item-desc {
-  font-size: 12px;
-  color: #666;
   margin: 0 0 8px 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  color: #666;
+  font-size: 14px;
+  line-height: 1.4;
 }
 
 .item-price {
@@ -282,18 +341,21 @@ const handleImageError = (event) => {
   justify-content: center;
   cursor: pointer;
   font-size: 18px;
+  font-weight: 500;
   transition: all 0.3s ease;
 }
 
 .control-btn:hover {
-  background: #f8f9fa;
-  border-color: #ff6b6b;
+  border-color: #667eea;
+  color: #667eea;
+  transform: scale(1.1);
 }
 
 .quantity {
   font-size: 16px;
   font-weight: 600;
-  min-width: 20px;
+  color: #333;
+  min-width: 24px;
   text-align: center;
 }
 
@@ -302,13 +364,13 @@ const handleImageError = (event) => {
   bottom: 70px;
   left: 0;
   right: 0;
-  background: white;
-  padding: 16px 20px;
-  border-top: 1px solid #e9ecef;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 20px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.1);
 }
 
 .total-info {
@@ -316,8 +378,8 @@ const handleImageError = (event) => {
 }
 
 .total-items {
-  font-size: 12px;
   color: #666;
+  font-size: 14px;
   margin-bottom: 4px;
 }
 
@@ -327,31 +389,61 @@ const handleImageError = (event) => {
 }
 
 .currency {
-  font-size: 14px;
+  font-size: 16px;
   color: #ff6b6b;
   margin-right: 2px;
 }
 
 .price {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 600;
   color: #ff6b6b;
 }
 
 .checkout-btn {
-  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
   padding: 12px 24px;
   border-radius: 25px;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
+  margin-left: 20px;
 }
 
 .checkout-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* 响应式优化 */
+@media (max-width: 480px) {
+  .cart-header {
+    padding: 16px;
+  }
+  
+  .cart-content {
+    padding: 16px;
+  }
+  
+  .cart-item {
+    padding: 16px;
+  }
+  
+  .item-image {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .cart-footer {
+    padding: 16px;
+  }
+  
+  .checkout-btn {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
 }
 </style>

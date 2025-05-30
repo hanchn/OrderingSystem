@@ -2,6 +2,9 @@
   <div class="menu-container">
     <!-- 桌号显示 -->
     <div class="table-info">
+      <button class="home-btn" @click="goToHome">
+        <span class="home-icon">🏠</span>
+      </button>
       <div class="table-badge">
         <span class="table-icon">🍽️</span>
         <span class="table-text">{{ tableDisplay }}</span>
@@ -106,208 +109,215 @@ import { cartManager } from '@/utils/cart'
 import { tableManager } from '@/utils/table'
 import BottomNavigation from '@/components/BottomNavigation.vue'
 
-export default {
-  name: 'MenuView',
-  setup() {
-    const router = useRouter()
-    const route = useRoute()
-    const categories = ref([])
-    const dishes = ref([])
-    const activeCategory = ref('')
-    const cartItems = ref([])
-    const tableDisplay = ref('')
-    
-    // 滑动相关
-    const touchStartX = ref(0)
-    const touchStartY = ref(0)
-    const translateX = ref(0)
-    const isDragging = ref(false)
-    const minSwipeDistance = 80
-    const maxVerticalDistance = 100
+const router = useRouter()
+const route = useRoute()
+const categories = ref([])
+const dishes = ref([])
+const activeCategory = ref('')
+const cartItems = ref([])
+const tableDisplay = ref('')
 
-    // 计算属性
-    const filteredDishes = computed(() => {
-      if (!activeCategory.value) return dishes.value
-      return dishes.value.filter(dish => 
-        dish.categoryId.toString() === activeCategory.value
-      )
-    })
+// 滑动相关
+const touchStartX = ref(0)
+const touchStartY = ref(0)
+const translateX = ref(0)
+const isDragging = ref(false)
+const minSwipeDistance = 80
+const maxVerticalDistance = 100
 
-    const cartItemCount = computed(() => {
-      return cartItems.value.reduce((total, item) => total + item.quantity, 0)
-    })
+// 计算属性
+const filteredDishes = computed(() => {
+  if (!activeCategory.value) return dishes.value
+  return dishes.value.filter(dish => 
+    dish.categoryId.toString() === activeCategory.value
+  )
+})
 
-    // 初始化桌号信息
-    const initTableInfo = () => {
-      tableManager.initFromQuery(route.query)
-      if (!tableManager.isValid()) {
-        tableManager.restoreFromStorage()
+const cartItemCount = computed(() => {
+  return cartItems.value.reduce((total, item) => total + item.quantity, 0)
+})
+
+// 初始化桌号信息
+const initTableInfo = () => {
+  tableManager.initFromQuery(route.query)
+  if (!tableManager.isValid()) {
+    tableManager.restoreFromStorage()
+  }
+  tableDisplay.value = tableManager.getTableDisplay()
+}
+
+// 加载分类
+const loadCategories = async () => {
+  try {
+    const response = await getCategories()
+    if (response.code === 200) {
+      categories.value = response.data
+      if (categories.value.length > 0) {
+        activeCategory.value = categories.value[0].id.toString()
       }
-      tableDisplay.value = tableManager.getTableDisplay()
+    } else {
+      ElMessage.error('加载分类失败')
     }
+  } catch (error) {
+    console.error('加载分类失败:', error)
+    ElMessage.error('加载分类失败')
+  }
+}
 
-    // 加载分类
-    const loadCategories = async () => {
-      try {
-        const response = await getCategories()
-        if (response.code === 200) {
-          categories.value = response.data
-          if (categories.value.length > 0) {
-            activeCategory.value = categories.value[0].id.toString()
-          }
-        } else {
-          ElMessage.error('加载分类失败')
-        }
-      } catch (error) {
-        console.error('加载分类失败:', error)
-        ElMessage.error('加载分类失败')
-      }
+// 加载菜品
+const loadDishes = async () => {
+  try {
+    const response = await getDishes()
+    if (response.code === 200) {
+      dishes.value = response.data.map(dish => ({
+        ...dish,
+        imageLoaded: false
+      }))
+    } else {
+      ElMessage.error('加载菜品失败')
     }
+  } catch (error) {
+    console.error('加载菜品失败:', error)
+    ElMessage.error('加载菜品失败')
+  }
+}
 
-    // 加载菜品
-    const loadDishes = async () => {
-      try {
-        const response = await getDishes()
-        if (response.code === 200) {
-          dishes.value = response.data.map(dish => ({
-            ...dish,
-            imageLoaded: false
-          }))
-        } else {
-          ElMessage.error('加载菜品失败')
-        }
-      } catch (error) {
-        console.error('加载菜品失败:', error)
-        ElMessage.error('加载菜品失败')
-      }
-    }
+// 图片加载处理
+const handleImageLoad = (e) => {
+  const dishId = e.target.closest('.dish-card').querySelector('.dish-name').textContent
+  const dish = dishes.value.find(d => d.name === dishId)
+  if (dish) {
+    dish.imageLoaded = true
+  }
+}
 
-    // 图片加载处理
-    const handleImageLoad = (e) => {
-      const dishId = e.target.closest('.dish-card').querySelector('.dish-name').textContent
-      const dish = dishes.value.find(d => d.name === dishId)
-      if (dish) {
-        dish.imageLoaded = true
-      }
-    }
+const handleImageError = (e) => {
+  e.target.style.display = 'none'
+}
 
-    const handleImageError = (e) => {
-      e.target.style.display = 'none'
-    }
+// 添加到购物车
+const addToCart = (dish) => {
+  cartManager.addItem({
+    id: dish.id,
+    name: dish.name,
+    price: dish.price,
+    image: dish.image
+  })
+  cartItems.value = cartManager.getItems()
+  
+  // 添加成功动画反馈
+  ElMessage({
+    message: `${dish.name} 已添加到购物车`,
+    type: 'success',
+    duration: 1500,
+    showClose: false
+  })
+}
 
-    // 添加到购物车
-    const addToCart = (dish) => {
-      cartManager.addItem({
-        id: dish.id,
-        name: dish.name,
-        price: dish.price,
-        image: dish.image
-      })
-      cartItems.value = cartManager.getItems()
-      
-      // 添加成功动画反馈
-      ElMessage({
-        message: `${dish.name} 已添加到购物车`,
-        type: 'success',
-        duration: 1500,
-        showClose: false
-      })
-    }
+// 跳转到购物车
+const goToCart = () => {
+  router.push('/cart')
+}
 
-    // 跳转到购物车
-    const goToCart = () => {
-      router.push('/cart')
-    }
+// 切换分类
+const switchCategory = (categoryId) => {
+  activeCategory.value = categoryId
+}
 
-    // 切换分类
-    const switchCategory = (categoryId) => {
-      activeCategory.value = categoryId
-    }
+// 切换到指定分类
+const switchToCategory = (direction) => {
+  const currentIndex = categories.value.findIndex(
+    cat => cat.id.toString() === activeCategory.value
+  )
+  
+  let newIndex
+  if (direction === 'next') {
+    newIndex = currentIndex < categories.value.length - 1 ? currentIndex + 1 : 0
+  } else {
+    newIndex = currentIndex > 0 ? currentIndex - 1 : categories.value.length - 1
+  }
+  
+  activeCategory.value = categories.value[newIndex].id.toString()
+}
 
-    // 切换到指定分类
-    const switchToCategory = (direction) => {
-      const currentIndex = categories.value.findIndex(
-        cat => cat.id.toString() === activeCategory.value
-      )
-      
-      let newIndex
-      if (direction === 'next') {
-        newIndex = currentIndex < categories.value.length - 1 ? currentIndex + 1 : 0
-      } else {
-        newIndex = currentIndex > 0 ? currentIndex - 1 : categories.value.length - 1
-      }
-      
-      activeCategory.value = categories.value[newIndex].id.toString()
-    }
+// 触摸事件处理
+const handleTouchStart = (e) => {
+  touchStartX.value = e.touches[0].clientX
+  touchStartY.value = e.touches[0].clientY
+  isDragging.value = true
+}
 
-    // 触摸事件处理
-    const handleTouchStart = (e) => {
-      touchStartX.value = e.touches[0].clientX
-      touchStartY.value = e.touches[0].clientY
-      isDragging.value = true
-    }
+const handleTouchMove = (e) => {
+  if (!isDragging.value) return
+  
+  const currentX = e.touches[0].clientX
+  const deltaX = currentX - touchStartX.value
+  const deltaY = Math.abs(e.touches[0].clientY - touchStartY.value)
+  
+  if (deltaY < maxVerticalDistance) {
+    translateX.value = deltaX * 0.3 // 添加阻尼效果
+    e.preventDefault()
+  }
+}
 
-    const handleTouchMove = (e) => {
-      if (!isDragging.value) return
-      
-      const currentX = e.touches[0].clientX
-      const deltaX = currentX - touchStartX.value
-      const deltaY = Math.abs(e.touches[0].clientY - touchStartY.value)
-      
-      if (deltaY < maxVerticalDistance) {
-        translateX.value = deltaX * 0.3 // 添加阻尼效果
-        e.preventDefault()
-      }
-    }
-
-    const handleTouchEnd = (e) => {
-      if (!isDragging.value) return
-      
-      const touchEndX = e.changedTouches[0].clientX
-      const touchEndY = e.changedTouches[0].clientY
-      
-      const deltaX = touchEndX - touchStartX.value
-      const deltaY = Math.abs(touchEndY - touchStartY.value)
-      
-      // 重置位移
-      translateX.value = 0
-      isDragging.value = false
-      
-      if (Math.abs(deltaX) > minSwipeDistance && deltaY < maxVerticalDistance) {
-        if (deltaX > 0) {
-          switchToCategory('prev')
-        } else {
-          switchToCategory('next')
-        }
-      }
-    }
-
-    onMounted(() => {
-      initTableInfo()
-      loadCategories()
-      loadDishes()
-      cartItems.value = cartManager.getItems()
-    })
-
-    return {
-      categories,
-      dishes,
-      activeCategory,
-      cartItems,
-      tableDisplay,
-      filteredDishes,
-      cartItemCount,
-      translateX,
-      addToCart,
-      goToCart,
-      switchCategory,
-      handleTouchStart,
-      handleTouchMove,
-      handleTouchEnd,
-      handleImageLoad,
-      handleImageError
+const handleTouchEnd = (e) => {
+  if (!isDragging.value) return
+  
+  const touchEndX = e.changedTouches[0].clientX
+  const touchEndY = e.changedTouches[0].clientY
+  
+  const deltaX = touchEndX - touchStartX.value
+  const deltaY = Math.abs(touchEndY - touchStartY.value)
+  
+  // 重置位移
+  translateX.value = 0
+  isDragging.value = false
+  
+  if (Math.abs(deltaX) > minSwipeDistance && deltaY < maxVerticalDistance) {
+    if (deltaX > 0) {
+      switchToCategory('prev')
+    } else {
+      switchToCategory('next')
     }
   }
+}
+
+// 监听路由参数变化
+watch(
+  () => route.query.category,
+  (newCategory) => {
+    if (newCategory && categories.value.length > 0) {
+      const targetCategory = categories.value.find(
+        cat => cat.id.toString() === newCategory
+      )
+      if (targetCategory) {
+        activeCategory.value = newCategory
+        // 清除 URL 中的 category 参数
+        router.replace({
+          path: route.path,
+          query: {
+            ...route.query,
+            category: undefined
+          }
+        })
+      }
+    }
+  },
+  { immediate: true }
+)
+
+onMounted(() => {
+  initTableInfo()
+  loadCategories()
+  loadDishes()
+  cartItems.value = cartManager.getItems()
+})
+// 添加跳转到首页的方法
+const goToHome = () => {
+  router.push({
+    path: '/',
+    query: route.query
+  })
 }
 </script>
 
@@ -636,6 +646,55 @@ export default {
   font-size: 12px;
   font-weight: bold;
   border: 2px solid white;
+}
+
+/* Home按钮样式 */
+.table-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.home-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.home-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+}
+
+.home-icon {
+  font-size: 18px;
+  color: white;
+}
+
+.table-badge {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 500;
+  margin-left: 12px;
 }
 
 /* 响应式优化 */

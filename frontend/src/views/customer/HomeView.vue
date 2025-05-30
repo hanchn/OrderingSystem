@@ -2,6 +2,9 @@
   <div class="home-container">
     <!-- 头部欢迎区域 -->
     <div class="welcome-header">
+      <button class="home-btn current-page" disabled>
+        <span class="home-icon">🏠</span>
+      </button>
       <div class="welcome-content">
         <div class="restaurant-info">
           <h1 class="restaurant-name">美味餐厅</h1>
