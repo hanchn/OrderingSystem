@@ -225,22 +225,24 @@ const loadDishDetail = async () => {
   }
 }
 
-// 在script setup部分
+// 在script setup部分，添加showAddSuccess声明
+const showAddSuccess = ref(false)
 const dishQuantity = ref(1)
 
-// 更新相关函数
-const increaseQuantity = () => {
-  dishQuantity.value++
-}
+// 添加重复点餐统计
+const dishOrderCount = ref({})
 
-const decreaseQuantity = () => {
-  if (dishQuantity.value > 1) {
-    dishQuantity.value--
-  }
-}
-
-// 在addToCart函数中
+// 更新addToCart函数
 const addToCart = async () => {
+  const dishId = dish.value.id
+  const dishName = dish.value.name
+  
+  // 统计点餐次数
+  if (!dishOrderCount.value[dishId]) {
+    dishOrderCount.value[dishId] = 0
+  }
+  dishOrderCount.value[dishId] += dishQuantity.value
+  
   for (let i = 0; i < dishQuantity.value; i++) {
     cartManager.addItem({
       id: dish.value.id,
@@ -250,8 +252,13 @@ const addToCart = async () => {
     })
   }
   
-  // 显示自定义成功提示
+  // 显示优化后的成功提示
   showAddSuccess.value = true
+  
+  // 3秒后自动隐藏
+  setTimeout(() => {
+    hideAddSuccess()
+  }, 3000)
 }
 
 // 隐藏成功提示
@@ -692,6 +699,7 @@ onMounted(() => {
   font-size: 20px;
 }
 
+<!-- 在模板最后添加加购成功弹窗 -->
 /* 加购成功弹窗样式 */
 .add-success-overlay {
   position: fixed;
@@ -699,122 +707,155 @@ onMounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
-  backdrop-filter: blur(4px);
+  z-index: 9999;
+  animation: fadeIn 0.3s ease-out;
 }
 
 .add-success-modal {
   background: white;
-  border-radius: 16px;
-  padding: 24px;
-  margin: 20px;
-  max-width: 400px;
-  width: 100%;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-  transform: scale(0.9);
-  animation: modalShow 0.3s ease-out forwards;
-}
-
-@keyframes modalShow {
-  to {
-    transform: scale(1);
-  }
-}
-
-.success-header {
+  border-radius: 20px;
+  padding: 40px 30px;
+  max-width: 350px;
+  width: 90%;
   text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.4s ease-out;
+  position: relative;
+}
+
+/* 成功图标动画 */
+.success-icon {
   margin-bottom: 20px;
 }
 
-.success-icon {
+.checkmark {
   width: 60px;
   height: 60px;
-  margin: 0 auto 12px;
+  border-radius: 50%;
+  display: block;
+  stroke-width: 3;
+  stroke: #4CAF50;
+  stroke-miterlimit: 10;
+  margin: 0 auto 20px;
+  position: relative;
 }
 
-.success-icon svg {
-  width: 100%;
-  height: 100%;
+.checkmark-circle {
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  stroke-width: 3;
+  stroke-miterlimit: 10;
+  stroke: #4CAF50;
+  fill: none;
+  animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 3px solid #4CAF50;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
-.success-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0;
+.checkmark-stem {
+  animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  position: absolute;
+  top: 28px;
+  left: 18px;
+  width: 15px;
+  height: 3px;
+  background: #4CAF50;
+  transform: rotate(45deg);
+}
+
+.checkmark-kick {
+  animation: stroke 0.2s cubic-bezier(0.65, 0, 0.45, 1) 0.9s forwards;
+  stroke-dasharray: 78;
+  stroke-dashoffset: 78;
+  position: absolute;
+  top: 35px;
+  left: 25px;
+  width: 25px;
+  height: 3px;
+  background: #4CAF50;
+  transform: rotate(-45deg);
 }
 
 .success-content {
-  margin-bottom: 24px;
+  color: #333;
 }
 
-.dish-preview {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px;
-  background: #f8f9fa;
-  border-radius: 12px;
+.success-title {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #2c3e50;
 }
 
-.preview-image {
-  width: 60px;
-  height: 60px;
-  border-radius: 8px;
-  object-fit: cover;
-}
-
-.preview-info {
-  flex: 1;
-}
-
-.preview-info .dish-name {
+.success-message {
   font-size: 16px;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0 0 4px 0;
+  margin-bottom: 20px;
+  color: #666;
+  line-height: 1.5;
 }
 
-.preview-info .quantity-info,
-.preview-info .price-info {
+.dish-name {
+  font-weight: 600;
+  color: #e67e22;
+}
+
+.quantity-text {
+  font-weight: 600;
+  color: #3498db;
+}
+
+.repeat-order-tip {
+  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+  padding: 12px 16px;
+  border-radius: 12px;
   font-size: 14px;
-  color: #6b7280;
-  margin: 2px 0;
+  color: #d63384;
+  margin: 15px 0;
+  font-weight: 500;
+  animation: bounce 0.6s ease-out;
 }
 
-.preview-info .price-info {
-  color: #ef4444;
-  font-weight: 600;
+.emoji {
+  font-size: 18px;
+  margin-right: 5px;
 }
 
 .success-actions {
   display: flex;
   gap: 12px;
+  margin-top: 25px;
 }
 
-.continue-btn,
-.cart-btn {
+.continue-btn, .cart-btn {
   flex: 1;
-  padding: 12px 16px;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 500;
+  padding: 12px 20px;
   border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
 }
 
 .continue-btn {
-  background: #f3f4f6;
-  color: #374151;
+  background: #f8f9fa;
+  color: #6c757d;
 }
 
 .continue-btn:hover {
-  background: #e5e7eb;
+  background: #e9ecef;
+  transform: translateY(-2px);
 }
 
 .cart-btn {
@@ -823,19 +864,45 @@ onMounted(() => {
 }
 
 .cart-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
 }
 
-/* 响应式设计 */
-@media (max-width: 480px) {
-  .add-success-modal {
-    margin: 16px;
-    padding: 20px;
+/* 动画效果 */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.9);
   }
-  
-  .success-actions {
-    flex-direction: column;
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes stroke {
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 53%, 80%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  40%, 43% {
+    transform: translate3d(0, -8px, 0);
+  }
+  70% {
+    transform: translate3d(0, -4px, 0);
+  }
+  90% {
+    transform: translate3d(0, -2px, 0);
   }
 }
 </style>

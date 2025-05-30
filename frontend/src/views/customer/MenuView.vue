@@ -329,7 +329,17 @@ const goToDishDetail = (dishId) => {
 // 在 goToDishDetail 方法后面添加
 
 // 添加商品到购物车
+// 添加重复点餐统计
+const dishOrderCount = ref({})
+
+// 优化addToCart函数
 const addToCart = (dish, event) => {
+  // 统计点餐次数
+  if (!dishOrderCount.value[dish.id]) {
+    dishOrderCount.value[dish.id] = 0
+  }
+  dishOrderCount.value[dish.id]++
+  
   // 先播放动画
   if (addToCartAnimationRef.value) {
     addToCartAnimationRef.value.startAnimation(dish, event)
@@ -338,7 +348,20 @@ const addToCart = (dish, event) => {
   // 延迟添加到购物车，让动画先开始
   setTimeout(() => {
     cartStore.addItem(dish)
-    ElMessage.success(`${dish.name} 已添加到购物车`)
+    
+    // 优化提示消息
+    let message = `${dish.name} 已添加到购物车`
+    if (dishOrderCount.value[dish.id] > 1) {
+      message += `\n😋 我知道这道菜肯定很好吃，今天您已经第${dishOrderCount.value[dish.id]}次点啦！`
+    }
+    
+    ElMessage({
+      message: message,
+      type: 'success',
+      duration: 3000,
+      showClose: true,
+      customClass: 'custom-add-cart-message'
+    })
   }, 100)
 }
 </script>
