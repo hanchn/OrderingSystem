@@ -274,6 +274,16 @@
 
     <!-- 底部导航 -->
     <BottomNavigation />
+    
+    <!-- 购物车浮动按钮 -->
+    <div class="cart-float" v-if="cartItemCount > 0">
+      <div class="cart-btn" @click="goToCart">
+        <span class="cart-icon">🛒</span>
+        <div class="cart-badge" v-if="cartItemCount > 0">
+          {{ cartItemCount }}
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -317,6 +327,19 @@ const currentBill = computed(() => {
     totalAmount
   }
 })
+
+// 购物车商品数量
+const cartItemCount = computed(() => {
+  return cartStore.totalQuantity.value || 0
+})
+
+// 跳转到购物车
+const goToCart = () => {
+  router.push({
+    path: '/cart',
+    query: route.query
+  })
+}
 
 // 查看购物车详情
 const viewCartDetail = () => {
@@ -1201,6 +1224,79 @@ onMounted(() => {
   }
 }
 
+/* 购物车浮动按钮 */
+.cart-float {
+  position: fixed;
+  bottom: 30px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.cart-btn {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(255, 107, 107, 0.4);
+  position: relative;
+}
+
+.cart-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 25px rgba(255, 107, 107, 0.6);
+}
+
+.cart-icon {
+  font-size: 24px;
+  color: white;
+}
+
+.cart-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #2ecc71;
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  border: 2px solid white;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+  }
+  50% {
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+  }
+  100% {
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
 /* 移动端优化 */
 @media (max-width: 480px) {
   .modal-overlay {
@@ -1256,6 +1352,26 @@ onMounted(() => {
   
   .empty-order .empty-icon {
     font-size: 48px;
+  }
+  
+  .cart-float {
+    bottom: 80px;
+    right: 16px;
+  }
+  
+  .cart-btn {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .cart-icon {
+    font-size: 20px;
+  }
+  
+  .cart-badge {
+    width: 20px;
+    height: 20px;
+    font-size: 11px;
   }
 }
 </style>

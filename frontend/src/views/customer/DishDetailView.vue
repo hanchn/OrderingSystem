@@ -166,7 +166,7 @@ const cartItems = ref([])
 
 // 计算购物车商品数量
 const cartItemCount = computed(() => {
-  return cartItems.value.reduce((total, item) => total + item.quantity, 0)
+  return (cartItems.value || []).reduce((total, item) => total + item.quantity, 0)
 })
 
 // 跳转到购物车
@@ -252,7 +252,7 @@ const addToCart = () => {
 
 // 监听购物车变化
 watch(() => cartManager.items, (newItems) => {
-  cartItems.value = newItems
+  cartItems.value = newItems || []
 }, { deep: true, immediate: true })
 
 onMounted(() => {
