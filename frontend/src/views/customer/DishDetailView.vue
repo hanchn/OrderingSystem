@@ -120,11 +120,11 @@
         <button 
           class="quantity-btn minus" 
           @click="decreaseQuantity"
-          :disabled="quantity <= 1"
+          :disabled="dishQuantity <= 1"
         >
           -
         </button>
-        <span class="quantity">{{ quantity }}</span>
+        <span class="quantity">{{ dishQuantity }}</span>
         <button class="quantity-btn plus" @click="increaseQuantity">
           +
         </button>
@@ -132,7 +132,7 @@
       
       <button class="add-to-cart-btn" @click="addToCart">
         <span class="btn-text">加入购物车</span>
-        <span class="total-price">¥{{ (dish.price * quantity).toFixed(2) }}</span>
+        <span class="total-price">¥{{ (dish.price * dishQuantity).toFixed(2) }}</span>
       </button>
     </div>
   </div>
@@ -159,6 +159,7 @@ const dish = ref({
   tags: [],
   nutrition: {}
 })
+// 删除第162行，重新输入
 const quantity = ref(1)
 
 // 购物车相关
@@ -224,18 +225,23 @@ const loadDishDetail = async () => {
   }
 }
 
+// 在script setup部分
+const dishQuantity = ref(1)
+
+// 更新相关函数
 const increaseQuantity = () => {
-  quantity.value++
+  dishQuantity.value++
 }
 
 const decreaseQuantity = () => {
-  if (quantity.value > 1) {
-    quantity.value--
+  if (dishQuantity.value > 1) {
+    dishQuantity.value--
   }
 }
 
-const addToCart = () => {
-  for (let i = 0; i < quantity.value; i++) {
+// 在addToCart函数中
+const addToCart = async () => {
+  for (let i = 0; i < dishQuantity.value; i++) {
     cartManager.addItem({
       id: dish.value.id,
       name: dish.value.name,
@@ -244,16 +250,13 @@ const addToCart = () => {
     })
   }
   
-  ElMessage({
-    message: `已添加 ${quantity.value} 份 ${dish.value.name} 到购物车`,
-    type: 'success',
-    duration: 2000
-  })
-  
-  // 添加成功后返回菜单页
-  setTimeout(() => {
-    router.back()
-  }, 1000)
+  // 显示自定义成功提示
+  showAddSuccess.value = true
+}
+
+// 隐藏成功提示
+const hideAddSuccess = () => {
+  showAddSuccess.value = false
 }
 
 // 监听购物车变化
@@ -671,5 +674,168 @@ onMounted(() => {
   font-size: 14px;
   margin: 0;
   text-align: justify;
+}
+/* 自定义 ElMessage 样式 */
+:deep(.custom-add-cart-message) {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+  font-weight: 500;
+  padding: 16px 24px;
+  font-size: 16px;
+}
+
+:deep(.custom-add-cart-message .el-message__icon) {
+  color: white;
+  font-size: 20px;
+}
+
+/* 加购成功弹窗样式 */
+.add-success-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.add-success-modal {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  margin: 20px;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  transform: scale(0.9);
+  animation: modalShow 0.3s ease-out forwards;
+}
+
+@keyframes modalShow {
+  to {
+    transform: scale(1);
+  }
+}
+
+.success-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.success-icon {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 12px;
+}
+
+.success-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.success-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.success-content {
+  margin-bottom: 24px;
+}
+
+.dish-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 12px;
+}
+
+.preview-image {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.preview-info {
+  flex: 1;
+}
+
+.preview-info .dish-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 4px 0;
+}
+
+.preview-info .quantity-info,
+.preview-info .price-info {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 2px 0;
+}
+
+.preview-info .price-info {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.success-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.continue-btn,
+.cart-btn {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.continue-btn {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.continue-btn:hover {
+  background: #e5e7eb;
+}
+
+.cart-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.cart-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* 响应式设计 */
+@media (max-width: 480px) {
+  .add-success-modal {
+    margin: 16px;
+    padding: 20px;
+  }
+  
+  .success-actions {
+    flex-direction: column;
+  }
 }
 </style>

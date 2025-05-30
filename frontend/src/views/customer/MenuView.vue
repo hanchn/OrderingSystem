@@ -89,7 +89,6 @@
                   <span class="currency">¥</span>
                   <span class="price">{{ dish.price }}</span>
                 </div>
-                <!-- 将原来的 @click.stop="addToCart(dish)" 改为 -->
                 <button 
                   class="add-btn"
                   @click.stop="addToCart(dish, $event)"
@@ -105,6 +104,9 @@
 
     <!-- 底部导航 -->
     <BottomNavigation />
+    
+    <!-- 添加购物车动画组件 -->
+    <AddToCartAnimation ref="addToCartAnimationRef" />
     
     <!-- 移除购物车浮动按钮 -->
     <!-- <div class="cart-float" v-if="cartItemCount > 0">
@@ -141,6 +143,9 @@ const categories = ref([])
 const dishes = ref([])
 const activeCategory = ref('')
 const tableDisplay = ref('')
+
+// Add this line:
+const addToCartAnimationRef = ref(null)
 
 // 滑动相关
 const touchStartX = ref(0)

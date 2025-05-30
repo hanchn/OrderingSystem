@@ -192,7 +192,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useCartStore } from '@/utils/cart'
 import { mockData } from '@/mock'
@@ -310,14 +310,17 @@ const callService = () => {
 const addToCart = (dish, event) => {
   cartStore.addItem(dish)
   
-  // 触发动画
-  if (addToCartAnimationRef.value && event) {
-    const rect = event.target.getBoundingClientRect()
-    addToCartAnimationRef.value.play({
-      x: rect.left + rect.width / 2,
-      y: rect.top + rect.height / 2
-    })
-  }
+  // 触发动画 - 使用 nextTick 确保组件已挂载
+  nextTick(() => {
+    if (addToCartAnimationRef.value && event) {
+      try {
+        // 修改：使用 startAnimation 方法而不是 play 方法
+        addToCartAnimationRef.value.startAnimation(dish, event)
+      } catch (error) {
+        console.warn('Animation failed:', error)
+      }
+    }
+  })
 }
 
 const viewDishDetail = (dish) => {
