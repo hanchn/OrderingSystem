@@ -1,4 +1,13 @@
-// 统一导出所有mock数据
+// 先导入所有mock数据
+import { mockCategories } from './categories'
+import { mockDishes } from './dishes'
+import { mockShop } from './shop'
+import { mockBrand } from './brand'
+import { mockCompany } from './company'
+import { mockOrders } from './orders'
+import { mockTables } from './tables'
+
+// 然后重新导出
 export { mockCategories } from './categories'
 export { mockDishes } from './dishes'
 export { mockShop } from './shop'

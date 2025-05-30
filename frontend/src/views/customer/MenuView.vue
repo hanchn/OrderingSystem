@@ -2,55 +2,102 @@
   <div class="menu-container">
     <!-- 桌号显示 -->
     <div class="table-info">
-      <el-tag type="primary" size="large">
-        {{ tableDisplay }}
-      </el-tag>
+      <div class="table-badge">
+        <span class="table-icon">🍽️</span>
+        <span class="table-text">{{ tableDisplay }}</span>
+      </div>
     </div>
 
-    <!-- 分类导航 -->
+    <!-- 分类导航 - 优化样式 -->
     <div class="category-nav">
-      <el-tabs v-model="activeCategory" @tab-click="handleCategoryChange">
-        <el-tab-pane 
+      <div class="category-scroll">
+        <div 
           v-for="category in categories" 
           :key="category.id"
-          :label="category.name" 
-          :name="category.id.toString()"
-        />
-      </el-tabs>
+          :class="['category-item', { active: activeCategory === category.id.toString() }]"
+          @click="switchCategory(category.id.toString())"
+        >
+          <span class="category-icon">{{ category.icon }}</span>
+          <span class="category-name">{{ category.name }}</span>
+        </div>
+      </div>
     </div>
 
-    <!-- 菜品列表 -->
-    <div class="dishes-grid">
-      <div 
-        v-for="dish in filteredDishes" 
-        :key="dish.id" 
-        class="dish-card"
-      >
-        <img :src="dish.image" :alt="dish.name" class="dish-image" />
-        <div class="dish-info">
-          <h3 class="dish-name">{{ dish.name }}</h3>
-          <p class="dish-description">{{ dish.description }}</p>
-          <div class="dish-footer">
-            <span class="dish-price">¥{{ dish.price }}</span>
-            <el-button 
-              type="primary" 
-              size="small" 
-              @click="addToCart(dish)"
-            >
-              加入购物车
-            </el-button>
+    <!-- 滑动指示器 -->
+    <div class="swipe-indicator">
+      <div class="indicator-dots">
+        <div 
+          v-for="(category, index) in categories" 
+          :key="category.id"
+          :class="['dot', { active: activeCategory === category.id.toString() }]"
+        ></div>
+      </div>
+      <div class="swipe-hint">← 左右滑动切换分类 →</div>
+    </div>
+
+    <!-- 菜品列表 - 优化滑动交互 -->
+    <div 
+      class="dishes-container"
+      @touchstart="handleTouchStart"
+      @touchmove="handleTouchMove"
+      @touchend="handleTouchEnd"
+    >
+      <div class="dishes-wrapper" :style="{ transform: `translateX(${translateX}px)` }">
+        <div class="dishes-grid">
+          <div 
+            v-for="dish in filteredDishes" 
+            :key="dish.id" 
+            class="dish-card"
+          >
+            <div class="dish-image-container">
+              <img 
+                :src="dish.image" 
+                :alt="dish.name" 
+                class="dish-image"
+                @error="handleImageError"
+                @load="handleImageLoad"
+              />
+              <div class="image-placeholder" v-if="!dish.imageLoaded">
+                <div class="placeholder-icon">🍽️</div>
+                <div class="placeholder-text">美味佳肴</div>
+              </div>
+              <div class="dish-tags" v-if="dish.tags && dish.tags.length">
+                <span 
+                  v-for="tag in dish.tags.slice(0, 2)" 
+                  :key="tag"
+                  class="tag"
+                >
+                  {{ tag }}
+                </span>
+              </div>
+            </div>
+            <div class="dish-info">
+              <h3 class="dish-name">{{ dish.name }}</h3>
+              <p class="dish-description">{{ dish.description }}</p>
+              <div class="dish-footer">
+                <div class="price-section">
+                  <span class="currency">¥</span>
+                  <span class="price">{{ dish.price }}</span>
+                </div>
+                <button 
+                  class="add-btn"
+                  @click="addToCart(dish)"
+                >
+                  <span class="btn-icon">+</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 购物车悬浮按钮 -->
+    <!-- 购物车悬浮按钮 - 优化样式 -->
     <div class="cart-float" @click="goToCart">
-      <el-badge :value="cartItemCount" :hidden="cartItemCount === 0">
-        <el-button type="primary" size="large" circle>
-          <el-icon><ShoppingCart /></el-icon>
-        </el-button>
-      </el-badge>
+      <div class="cart-btn">
+        <div class="cart-icon">🛒</div>
+        <div class="cart-badge" v-if="cartItemCount > 0">{{ cartItemCount }}</div>
+      </div>
     </div>
   </div>
 </template>
@@ -73,6 +120,14 @@ export default {
     const activeCategory = ref('')
     const cartItems = ref([])
     const tableDisplay = ref('')
+    
+    // 滑动相关
+    const touchStartX = ref(0)
+    const touchStartY = ref(0)
+    const translateX = ref(0)
+    const isDragging = ref(false)
+    const minSwipeDistance = 80
+    const maxVerticalDistance = 100
 
     // 计算属性
     const filteredDishes = computed(() => {
@@ -88,24 +143,14 @@ export default {
 
     // 初始化桌号信息
     const initTableInfo = () => {
-      // 从URL参数初始化
       tableManager.initFromQuery(route.query)
-      
-      // 如果URL没有参数，尝试从localStorage恢复
       if (!tableManager.isValid()) {
         tableManager.restoreFromStorage()
       }
-      
-      // 更新显示
       tableDisplay.value = tableManager.getTableDisplay()
-      
-      // 如果仍然没有有效的桌号信息，显示警告
-      if (!tableManager.isValid()) {
-        ElMessage.warning('未检测到桌号信息，请扫描桌上的二维码')
-      }
     }
 
-    // 方法
+    // 加载分类
     const loadCategories = async () => {
       try {
         const response = await getCategories()
@@ -114,6 +159,8 @@ export default {
           if (categories.value.length > 0) {
             activeCategory.value = categories.value[0].id.toString()
           }
+        } else {
+          ElMessage.error('加载分类失败')
         }
       } catch (error) {
         console.error('加载分类失败:', error)
@@ -121,11 +168,17 @@ export default {
       }
     }
 
+    // 加载菜品
     const loadDishes = async () => {
       try {
         const response = await getDishes()
         if (response.code === 200) {
-          dishes.value = response.data
+          dishes.value = response.data.map(dish => ({
+            ...dish,
+            imageLoaded: false
+          }))
+        } else {
+          ElMessage.error('加载菜品失败')
         }
       } catch (error) {
         console.error('加载菜品失败:', error)
@@ -133,21 +186,104 @@ export default {
       }
     }
 
-    const addToCart = (dish) => {
-      cartManager.addItem(dish)
-      cartItems.value = cartManager.getItems()
-      ElMessage.success(`${dish.name} 已加入购物车`)
+    // 图片加载处理
+    const handleImageLoad = (e) => {
+      const dishId = e.target.closest('.dish-card').querySelector('.dish-name').textContent
+      const dish = dishes.value.find(d => d.name === dishId)
+      if (dish) {
+        dish.imageLoaded = true
+      }
     }
 
-    const goToCart = () => {
-      router.push({
-        path: '/cart',
-        query: route.query // 保持URL参数
+    const handleImageError = (e) => {
+      e.target.style.display = 'none'
+    }
+
+    // 添加到购物车
+    const addToCart = (dish) => {
+      cartManager.addItem({
+        id: dish.id,
+        name: dish.name,
+        price: dish.price,
+        image: dish.image
+      })
+      cartItems.value = cartManager.getItems()
+      
+      // 添加成功动画反馈
+      ElMessage({
+        message: `${dish.name} 已添加到购物车`,
+        type: 'success',
+        duration: 1500,
+        showClose: false
       })
     }
 
-    const handleCategoryChange = () => {
-      // 分类切换逻辑
+    // 跳转到购物车
+    const goToCart = () => {
+      router.push('/cart')
+    }
+
+    // 切换分类
+    const switchCategory = (categoryId) => {
+      activeCategory.value = categoryId
+    }
+
+    // 切换到指定分类
+    const switchToCategory = (direction) => {
+      const currentIndex = categories.value.findIndex(
+        cat => cat.id.toString() === activeCategory.value
+      )
+      
+      let newIndex
+      if (direction === 'next') {
+        newIndex = currentIndex < categories.value.length - 1 ? currentIndex + 1 : 0
+      } else {
+        newIndex = currentIndex > 0 ? currentIndex - 1 : categories.value.length - 1
+      }
+      
+      activeCategory.value = categories.value[newIndex].id.toString()
+    }
+
+    // 触摸事件处理
+    const handleTouchStart = (e) => {
+      touchStartX.value = e.touches[0].clientX
+      touchStartY.value = e.touches[0].clientY
+      isDragging.value = true
+    }
+
+    const handleTouchMove = (e) => {
+      if (!isDragging.value) return
+      
+      const currentX = e.touches[0].clientX
+      const deltaX = currentX - touchStartX.value
+      const deltaY = Math.abs(e.touches[0].clientY - touchStartY.value)
+      
+      if (deltaY < maxVerticalDistance) {
+        translateX.value = deltaX * 0.3 // 添加阻尼效果
+        e.preventDefault()
+      }
+    }
+
+    const handleTouchEnd = (e) => {
+      if (!isDragging.value) return
+      
+      const touchEndX = e.changedTouches[0].clientX
+      const touchEndY = e.changedTouches[0].clientY
+      
+      const deltaX = touchEndX - touchStartX.value
+      const deltaY = Math.abs(touchEndY - touchStartY.value)
+      
+      // 重置位移
+      translateX.value = 0
+      isDragging.value = false
+      
+      if (Math.abs(deltaX) > minSwipeDistance && deltaY < maxVerticalDistance) {
+        if (deltaX > 0) {
+          switchToCategory('prev')
+        } else {
+          switchToCategory('next')
+        }
+      }
     }
 
     onMounted(() => {
@@ -165,9 +301,15 @@ export default {
       tableDisplay,
       filteredDishes,
       cartItemCount,
+      translateX,
       addToCart,
       goToCart,
-      handleCategoryChange
+      switchCategory,
+      handleTouchStart,
+      handleTouchMove,
+      handleTouchEnd,
+      handleImageLoad,
+      handleImageError
     }
   }
 }
@@ -175,60 +317,230 @@ export default {
 
 <style scoped>
 .menu-container {
-  padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 0;
 }
 
+/* 桌号显示优化 */
 .table-info {
+  background: white;
+  padding: 15px 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+}
+
+.table-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.table-icon {
+  font-size: 24px;
+}
+
+/* 分类导航优化 */
+.category-nav {
+  padding: 0 20px;
+  margin-bottom: 15px;
+}
+
+.category-scroll {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 10px 0;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.category-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.category-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 80px;
+  padding: 12px 8px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.category-item.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.category-icon {
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+
+.category-name {
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* 滑动指示器 */
+.swipe-indicator {
   text-align: center;
   margin-bottom: 20px;
 }
 
-.category-nav {
-  margin-bottom: 20px;
+.indicator-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ddd;
+  transition: all 0.3s ease;
+}
+
+.dot.active {
+  background: #667eea;
+  transform: scale(1.2);
+}
+
+.swipe-hint {
+  font-size: 12px;
+  color: #999;
+  opacity: 0.8;
+}
+
+/* 菜品容器 */
+.dishes-container {
+  padding: 0 20px;
+  overflow: hidden;
+}
+
+.dishes-wrapper {
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .dishes-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-  margin-bottom: 80px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  margin-bottom: 100px;
 }
 
+/* 菜品卡片优化 */
 .dish-card {
   background: white;
-  border-radius: 8px;
+  border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+  position: relative;
 }
 
 .dish-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-5px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+}
+
+.dish-image-container {
+  position: relative;
+  height: 120px;
+  overflow: hidden;
 }
 
 .dish-image {
   width: 100%;
-  height: 200px;
+  height: 100%;
   object-fit: cover;
+  transition: transform 0.3s ease;
 }
 
-.dish-info {
-  padding: 15px;
+.dish-card:hover .dish-image {
+  transform: scale(1.05);
 }
 
-.dish-name {
-  font-size: 18px;
-  font-weight: bold;
+/* 图片占位符 */
+.image-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.placeholder-icon {
+  font-size: 32px;
   margin-bottom: 8px;
 }
 
-.dish-description {
-  color: #666;
+.placeholder-text {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* 标签 */
+.dish-tags {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  gap: 4px;
+}
+
+.tag {
+  background: rgba(0,0,0,0.7);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+/* 菜品信息 */
+.dish-info {
+  padding: 12px;
+}
+
+.dish-name {
   font-size: 14px;
-  margin-bottom: 15px;
-  line-height: 1.4;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #2c3e50;
+  line-height: 1.2;
+}
+
+.dish-description {
+  color: #7f8c8d;
+  font-size: 11px;
+  margin-bottom: 12px;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .dish-footer {
@@ -237,16 +549,148 @@ export default {
   align-items: center;
 }
 
-.dish-price {
-  font-size: 20px;
-  font-weight: bold;
-  color: #e74c3c;
+.price-section {
+  display: flex;
+  align-items: baseline;
 }
 
+.currency {
+  font-size: 12px;
+  color: #e74c3c;
+  font-weight: 500;
+}
+
+.price {
+  font-size: 16px;
+  font-weight: 700;
+  color: #e74c3c;
+  margin-left: 2px;
+}
+
+/* 添加按钮优化 */
+.add-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+}
+
+.add-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.5);
+}
+
+.btn-icon {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+/* 购物车悬浮按钮优化 */
 .cart-float {
   position: fixed;
   bottom: 30px;
-  right: 30px;
+  right: 20px;
   z-index: 1000;
+}
+
+.cart-btn {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(255, 107, 107, 0.4);
+  position: relative;
+}
+
+.cart-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 25px rgba(255, 107, 107, 0.6);
+}
+
+.cart-icon {
+  font-size: 24px;
+  color: white;
+}
+
+.cart-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #2ecc71;
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  border: 2px solid white;
+}
+
+/* 响应式优化 */
+@media (max-width: 480px) {
+  .dishes-grid {
+    gap: 12px;
+  }
+  
+  .dish-image-container {
+    height: 100px;
+  }
+  
+  .dish-info {
+    padding: 10px;
+  }
+  
+  .dish-name {
+    font-size: 13px;
+  }
+  
+  .dish-description {
+    font-size: 10px;
+  }
+  
+  .price {
+    font-size: 14px;
+  }
+  
+  .add-btn {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .btn-icon {
+    font-size: 16px;
+  }
+}
+
+/* 加载动画 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dish-card {
+  animation: fadeIn 0.5s ease-out;
 }
 </style>
