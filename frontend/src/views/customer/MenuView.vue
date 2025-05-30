@@ -10,7 +10,14 @@
 
     <!-- 分类导航 - 添加 ref -->
     <div class="category-nav">
-      <div class="category-scroll" ref="categoryScrollRef">
+      <div 
+        ref="categoryNavRef"
+        class="category-scroll"
+        @touchstart="handleTouchStart"
+        @touchmove="handleTouchMove"
+        @touchend="handleTouchEnd"
+        :style="{ transform: `translateX(${translateX}px)` }"
+      >
         <div 
           v-for="category in categories" 
           :key="category.id"
@@ -100,7 +107,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getCategories, getDishes } from '@/api/dish'
@@ -121,8 +128,65 @@ const touchStartX = ref(0)
 const touchStartY = ref(0)
 const translateX = ref(0)
 const isDragging = ref(false)
-const minSwipeDistance = 80
-const maxVerticalDistance = 100
+const minSwipeDistance = 50  // 降低最小滑动距离，提高灵敏度
+const maxVerticalDistance = 80  // 减少垂直距离限制
+
+// 触摸事件处理
+const handleTouchStart = (e) => {
+  touchStartX.value = e.touches[0].clientX
+  touchStartY.value = e.touches[0].clientY
+  isDragging.value = true
+  
+  // 阻止默认行为，避免与页面滚动冲突
+  e.preventDefault()
+}
+
+const handleTouchMove = (e) => {
+  if (!isDragging.value) return
+  
+  const currentX = e.touches[0].clientX
+  const currentY = e.touches[0].clientY
+  const deltaX = currentX - touchStartX.value
+  const deltaY = Math.abs(currentY - touchStartY.value)
+  
+  // 如果垂直滑动距离小于限制，则处理水平滑动
+  if (deltaY < maxVerticalDistance) {
+    translateX.value = deltaX * 0.4 // 增加阻尼效果的响应度
+    e.preventDefault() // 阻止页面滚动
+  } else {
+    // 如果垂直滑动距离过大，取消水平滑动
+    isDragging.value = false
+    translateX.value = 0
+  }
+}
+
+const handleTouchEnd = (e) => {
+  if (!isDragging.value) {
+    translateX.value = 0
+    return
+  }
+  
+  const touchEndX = e.changedTouches[0].clientX
+  const touchEndY = e.changedTouches[0].clientY
+  
+  const deltaX = touchEndX - touchStartX.value
+  const deltaY = Math.abs(touchEndY - touchStartY.value)
+  
+  // 重置位移
+  translateX.value = 0
+  isDragging.value = false
+  
+  // 判断是否为有效的水平滑动
+  if (Math.abs(deltaX) > minSwipeDistance && deltaY < maxVerticalDistance) {
+    if (deltaX > 0) {
+      // 向右滑动，切换到上一个分类
+      switchToCategory('prev')
+    } else {
+      // 向左滑动，切换到下一个分类
+      switchToCategory('next')
+    }
+  }
+}
 
 // 计算属性
 const filteredDishes = computed(() => {
@@ -218,9 +282,43 @@ const goToCart = () => {
   router.push('/cart')
 }
 
+// 在 script setup 部分添加以下代码
+
+// 分类导航引用
+const categoryNavRef = ref(null)
+
+// 自动滚动到选中分类
+const scrollCategoryIntoView = () => {
+  nextTick(() => {
+    if (!categoryNavRef.value) return
+    
+    const activeElement = categoryNavRef.value.querySelector('.category-item.active')
+    if (!activeElement) return
+    
+    const container = categoryNavRef.value
+    const containerRect = container.getBoundingClientRect()
+    const elementRect = activeElement.getBoundingClientRect()
+    
+    // 计算元素相对于容器的位置
+    const elementLeft = elementRect.left - containerRect.left + container.scrollLeft
+    const elementWidth = elementRect.width
+    const containerWidth = containerRect.width
+    
+    // 计算目标滚动位置（让选中项居中）
+    const targetScrollLeft = elementLeft - (containerWidth - elementWidth) / 2
+    
+    // 平滑滚动到目标位置
+    container.scrollTo({
+      left: Math.max(0, targetScrollLeft),
+      behavior: 'smooth'
+    })
+  })
+}
+
 // 切换分类
 const switchCategory = (categoryId) => {
   activeCategory.value = categoryId
+  scrollCategoryIntoView()
 }
 
 // 切换到指定分类
@@ -237,79 +335,25 @@ const switchToCategory = (direction) => {
   }
   
   activeCategory.value = categories.value[newIndex].id.toString()
+  scrollCategoryIntoView()
 }
 
-// 触摸事件处理
-const handleTouchStart = (e) => {
-  touchStartX.value = e.touches[0].clientX
-  touchStartY.value = e.touches[0].clientY
-  isDragging.value = true
-}
+// 监听 activeCategory 变化，自动滚动
+watch(activeCategory, () => {
+  scrollCategoryIntoView()
+})
 
-const handleTouchMove = (e) => {
-  if (!isDragging.value) return
-  
-  const currentX = e.touches[0].clientX
-  const deltaX = currentX - touchStartX.value
-  const deltaY = Math.abs(e.touches[0].clientY - touchStartY.value)
-  
-  if (deltaY < maxVerticalDistance) {
-    translateX.value = deltaX * 0.3 // 添加阻尼效果
-    e.preventDefault()
-  }
-}
-
-const handleTouchEnd = (e) => {
-  if (!isDragging.value) return
-  
-  const touchEndX = e.changedTouches[0].clientX
-  const touchEndY = e.changedTouches[0].clientY
-  
-  const deltaX = touchEndX - touchStartX.value
-  const deltaY = Math.abs(touchEndY - touchStartY.value)
-  
-  // 重置位移
-  translateX.value = 0
-  isDragging.value = false
-  
-  if (Math.abs(deltaX) > minSwipeDistance && deltaY < maxVerticalDistance) {
-    if (deltaX > 0) {
-      switchToCategory('prev')
-    } else {
-      switchToCategory('next')
-    }
-  }
-}
-
-// 监听路由参数变化
-watch(
-  () => route.query.category,
-  (newCategory) => {
-    if (newCategory && categories.value.length > 0) {
-      const targetCategory = categories.value.find(
-        cat => cat.id.toString() === newCategory
-      )
-      if (targetCategory) {
-        activeCategory.value = newCategory
-        // 清除 URL 中的 category 参数
-        router.replace({
-          path: route.path,
-          query: {
-            ...route.query,
-            category: undefined
-          }
-        })
-      }
-    }
-  },
-  { immediate: true }
-)
-
+// 在 onMounted 中添加
 onMounted(() => {
   initTableInfo()
   loadCategories()
   loadDishes()
   cartItems.value = cartManager.getItems()
+  
+  // 初始化后自动滚动到第一个分类
+  nextTick(() => {
+    scrollCategoryIntoView()
+  })
 })
 // 移除 goToHome 方法
 // const goToHome = () => {
