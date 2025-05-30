@@ -1,96 +1,64 @@
-// 购物车管理工具
-export class CartManager {
+import { tableManager } from './table'
+
+class CartManager {
   constructor() {
-    this.storageKey = 'shopping_cart'
-    this.tableKey = 'table_id'
+    this.storageKey = 'cart_items'
   }
 
-  // 获取购物车数据
-  getCart() {
-    const cartData = localStorage.getItem(this.storageKey)
-    return cartData ? JSON.parse(cartData) : []
+  // 获取购物车商品
+  getItems() {
+    const items = localStorage.getItem(this.storageKey)
+    return items ? JSON.parse(items) : []
   }
 
-  // 保存购物车数据
-  saveCart(cartItems) {
-    localStorage.setItem(this.storageKey, JSON.stringify(cartItems))
-  }
-
-  // 添加到购物车
-  addToCart(dish, quantity = 1, notes = '') {
-    const cart = this.getCart()
-    const existingItem = cart.find(item => item.dish.id === dish.id)
+  // 添加商品到购物车
+  addItem(dish) {
+    const items = this.getItems()
+    const existingItem = items.find(item => item.id === dish.id)
     
     if (existingItem) {
-      existingItem.quantity += quantity
-      if (notes) existingItem.notes = notes
+      existingItem.quantity += 1
     } else {
-      cart.push({
-        dish,
-        quantity,
-        notes
+      items.push({
+        ...dish,
+        quantity: 1
       })
     }
     
-    this.saveCart(cart)
-    return cart
+    this.saveItems(items)
+    return items
   }
 
-  // 更新数量
-  updateQuantity(dishId, quantity) {
-    const cart = this.getCart()
-    const item = cart.find(item => item.dish.id === dishId)
+  // 创建订单数据（包含完整的层级信息）
+  createOrderData() {
+    const items = this.getItems()
+    const tableInfo = tableManager.getFullIdentifier()
     
-    if (item) {
-      if (quantity <= 0) {
-        return this.removeFromCart(dishId)
-      } else {
-        item.quantity = quantity
-        this.saveCart(cart)
-      }
+    return {
+      ...tableInfo,
+      items: items,
+      totalAmount: this.getTotalAmount(),
+      orderTime: new Date().toISOString(),
+      // 添加订单唯一标识
+      orderKey: `${tableInfo.brandId}_${tableInfo.companyId}_${tableInfo.shopId}_${tableInfo.deskNumber}_${Date.now()}`
     }
-    
-    return cart
   }
 
-  // 从购物车移除
-  removeFromCart(dishId) {
-    const cart = this.getCart()
-    const filteredCart = cart.filter(item => item.dish.id !== dishId)
-    this.saveCart(filteredCart)
-    return filteredCart
+  // 计算总金额
+  getTotalAmount() {
+    const items = this.getItems()
+    return items.reduce((total, item) => total + (item.price * item.quantity), 0)
+  }
+
+  // 保存购物车数据
+  saveItems(items) {
+    localStorage.setItem(this.storageKey, JSON.stringify(items))
   }
 
   // 清空购物车
-  clearCart() {
+  clear() {
     localStorage.removeItem(this.storageKey)
-    return []
-  }
-
-  // 获取总数量
-  getTotalItems() {
-    const cart = this.getCart()
-    return cart.reduce((total, item) => total + item.quantity, 0)
-  }
-
-  // 获取总金额
-  getTotalAmount() {
-    const cart = this.getCart()
-    return cart.reduce((total, item) => {
-      return total + item.dish.price * item.quantity
-    }, 0)
-  }
-
-  // 设置餐桌ID
-  setTableId(tableId) {
-    localStorage.setItem(this.tableKey, tableId)
-  }
-
-  // 获取餐桌ID
-  getTableId() {
-    return localStorage.getItem(this.tableKey)
   }
 }
 
-// 创建全局实例
 export const cartManager = new CartManager()

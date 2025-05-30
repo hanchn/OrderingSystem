@@ -1,5 +1,12 @@
 <template>
   <div class="menu-container">
+    <!-- 桌号显示 -->
+    <div class="table-info">
+      <el-tag type="primary" size="large">
+        {{ tableDisplay }}
+      </el-tag>
+    </div>
+
     <!-- 分类导航 -->
     <div class="category-nav">
       <el-tabs v-model="activeCategory" @tab-click="handleCategoryChange">
@@ -50,19 +57,22 @@
 
 <script>
 import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { dishApi } from '@/api/dish'
 import { cartManager } from '@/utils/cart'
+import { tableManager } from '@/utils/table'
 
 export default {
   name: 'MenuView',
   setup() {
     const router = useRouter()
+    const route = useRoute()
     const categories = ref([])
     const dishes = ref([])
     const activeCategory = ref('')
     const cartItems = ref([])
+    const tableDisplay = ref('')
 
     // 计算属性
     const filteredDishes = computed(() => {
@@ -76,10 +86,31 @@ export default {
       return cartItems.value.reduce((total, item) => total + item.quantity, 0)
     })
 
+    // 初始化桌号信息
+    const initTableInfo = () => {
+      // 从URL参数初始化
+      tableManager.initFromQuery(route.query)
+      
+      // 如果URL没有参数，尝试从localStorage恢复
+      if (!tableManager.isValid()) {
+        tableManager.restoreFromStorage()
+      }
+      
+      // 更新显示
+      tableDisplay.value = tableManager.getTableDisplay()
+      
+      // 如果仍然没有有效的桌号信息，显示警告
+      if (!tableManager.isValid()) {
+        ElMessage.warning('未检测到桌号信息，请扫描桌上的二维码')
+      }
+    }
+
     // 方法
     const loadCategories = async () => {
       try {
-        const response = await dishApi.getCategories()
+        const response = await dishApi.getCategories({
+          storeId: tableManager.getStoreId()
+        })
         categories.value = response.data.data
         if (categories.value.length > 0) {
           activeCategory.value = categories.value[0].id.toString()
@@ -91,36 +122,38 @@ export default {
 
     const loadDishes = async () => {
       try {
-        const response = await dishApi.getDishes({ status: 'active' })
+        const response = await dishApi.getDishes({ 
+          status: 'active',
+          storeId: tableManager.getStoreId()
+        })
         dishes.value = response.data.data.dishes
       } catch (error) {
         ElMessage.error('加载菜品失败')
       }
     }
 
-    const loadCart = () => {
-      cartItems.value = cartManager.getCart()
-    }
-
     const addToCart = (dish) => {
-      cartManager.addToCart(dish, 1)
-      cartItems.value = cartManager.getCart()
+      cartManager.addItem(dish)
+      cartItems.value = cartManager.getItems()
       ElMessage.success(`${dish.name} 已加入购物车`)
     }
 
-    const handleCategoryChange = (tab) => {
-      activeCategory.value = tab.name
-    }
-
     const goToCart = () => {
-      router.push('/cart')
+      router.push({
+        path: '/cart',
+        query: route.query // 保持URL参数
+      })
     }
 
-    // 生命周期
+    const handleCategoryChange = () => {
+      // 分类切换逻辑
+    }
+
     onMounted(() => {
+      initTableInfo()
       loadCategories()
       loadDishes()
-      loadCart()
+      cartItems.value = cartManager.getItems()
     })
 
     return {
@@ -128,11 +161,12 @@ export default {
       dishes,
       activeCategory,
       cartItems,
+      tableDisplay,
       filteredDishes,
       cartItemCount,
       addToCart,
-      handleCategoryChange,
-      goToCart
+      goToCart,
+      handleCategoryChange
     }
   }
 }
@@ -143,6 +177,11 @@ export default {
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
+}
+
+.table-info {
+  text-align: center;
+  margin-bottom: 20px;
 }
 
 .category-nav {
@@ -159,8 +198,8 @@ export default {
 .dish-card {
   background: white;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s;
 }
 
@@ -175,7 +214,7 @@ export default {
 }
 
 .dish-info {
-  padding: 16px;
+  padding: 15px;
 }
 
 .dish-name {
@@ -187,7 +226,8 @@ export default {
 .dish-description {
   color: #666;
   font-size: 14px;
-  margin-bottom: 12px;
+  margin-bottom: 15px;
+  line-height: 1.4;
 }
 
 .dish-footer {
@@ -197,15 +237,15 @@ export default {
 }
 
 .dish-price {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: bold;
   color: #e74c3c;
 }
 
 .cart-float {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
+  bottom: 30px;
+  right: 30px;
   z-index: 1000;
 }
 </style>

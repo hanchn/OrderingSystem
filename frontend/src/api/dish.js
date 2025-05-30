@@ -1,48 +1,33 @@
 import request from './request'
 
 export const dishApi = {
-  // 获取菜品列表
-  getDishes: (params = {}) => {
+  // 获取菜品分类（支持多层级筛选）
+  getCategories(params = {}) {
+    return request.get('/categories', { params })
+  },
+
+  // 获取菜品列表（支持品牌、公司、门店筛选）
+  getDishes(params = {}) {
     return request.get('/dishes', { params })
   },
 
-  // 获取菜品详情
-  getDishById: (id) => {
-    return request.get(`/dishes/${id}`)
+  // 获取单个菜品详情
+  getDishById(id, params = {}) {
+    return request.get(`/dishes/${id}`, { params })
   },
 
-  // 创建菜品
-  createDish: (data) => {
-    return request.post('/dishes', data)
+  // 获取门店信息
+  getShopInfo(shopId, params = {}) {
+    return request.get(`/shops/${shopId}`, { params })
   },
 
-  // 更新菜品
-  updateDish: (id, data) => {
-    return request.put(`/dishes/${id}`, data)
+  // 获取品牌信息
+  getBrandInfo(brandId) {
+    return request.get(`/brands/${brandId}`)
   },
 
-  // 删除菜品
-  deleteDish: (id) => {
-    return request.delete(`/dishes/${id}`)
-  },
-
-  // 获取分类列表
-  getCategories: () => {
-    return request.get('/categories')
-  },
-
-  // 创建分类
-  createCategory: (data) => {
-    return request.post('/categories', data)
-  },
-
-  // 更新分类
-  updateCategory: (id, data) => {
-    return request.put(`/categories/${id}`, data)
-  },
-
-  // 删除分类
-  deleteCategory: (id) => {
-    return request.delete(`/categories/${id}`)
+  // 获取公司信息
+  getCompanyInfo(companyId) {
+    return request.get(`/companies/${companyId}`)
   }
 }

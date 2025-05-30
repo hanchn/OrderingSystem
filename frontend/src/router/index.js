@@ -9,7 +9,17 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: '/menu'
+      redirect: to => {
+        // 如果有完整的参数，重定向到菜单页面并保持参数
+        const { brandId, companyId, shopId, desk } = to.query
+        if (shopId && desk) {
+          return { 
+            path: '/menu', 
+            query: { brandId, companyId, shopId, desk } 
+          }
+        }
+        return '/menu'
+      }
     },
     {
       path: '/menu',
@@ -74,36 +84,28 @@ const router = createRouter({
   ]
 })
 
-// 路由守卫
-router.beforeEach(async (to, from, next) => {
+// 路由守卫 - 确保桌号信息传递
+router.beforeEach((to, from, next) => {
   NProgress.start()
   
-  // 设置页面标题
-  if (to.meta.title) {
-    document.title = `${to.meta.title} - 扫码点餐系统`
-  }
+  // 如果当前路由有桌号信息，但目标路由没有，则传递过去
+  const fromParams = from.query
+  const toParams = to.query
   
-  // 检查是否需要登录
-  const token = localStorage.getItem('token')
-  if (to.meta.requiresAuth && !token) {
-    next('/login')
-    return
+  if (fromParams.shopId && fromParams.desk && !toParams.shopId && !toParams.desk) {
+    next({
+      ...to,
+      query: {
+        ...to.query,
+        brandId: fromParams.brandId,
+        companyId: fromParams.companyId,
+        shopId: fromParams.shopId,
+        desk: fromParams.desk
+      }
+    })
+  } else {
+    next()
   }
-  
-  // 检查是否需要管理员权限
-  const userRole = localStorage.getItem('userRole')
-  if (to.meta.requiresAdmin && userRole !== 'admin') {
-    next('/')
-    return
-  }
-  
-  // 如果已登录且访问登录页，重定向到首页
-  if (to.name === 'Login' && token) {
-    next('/')
-    return
-  }
-  
-  next()
 })
 
 router.afterEach(() => {
