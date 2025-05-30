@@ -198,7 +198,13 @@ const handleImageError = (e) => {
 const loadDishDetail = async () => {
   try {
     const dishId = parseInt(route.params.id)  // 确保ID为数字类型
+    console.log('加载菜品详情，ID:', dishId, '类型:', typeof dishId)
+    console.log('当前URL:', window.location.href)
+    console.log('是否测试模式:', new URLSearchParams(window.location.search).get('test') === '1')
+    
     const response = await getDishDetail(dishId)
+    console.log('API响应:', response)
+    
     if (response.code === 200 && response.data) {
       dish.value = {
         ...response.data,

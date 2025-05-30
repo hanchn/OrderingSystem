@@ -4,8 +4,10 @@ import { mockData, createMockResponse } from '@/mock'
 
 // 检查是否为测试模式
 function isTestMode() {
-  const urlParams = new URLSearchParams(window.location.search)
-  return urlParams.get('test') === '1'
+  // 临时强制返回true以使用测试模式
+  return true
+  // const urlParams = new URLSearchParams(window.location.search)
+  // return urlParams.get('test') === '1'
 }
 
 // 获取菜品分类列表
