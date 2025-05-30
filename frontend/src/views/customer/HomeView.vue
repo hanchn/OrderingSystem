@@ -1521,4 +1521,27 @@ onMounted(() => {
       font-weight: bold;
       border: 2px solid white;
     }
+/* 自定义添加购物车消息样式 */
+.custom-add-cart-message {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  border: none !important;
+  color: white !important;
+  font-weight: 500 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+  white-space: pre-line !important;
+}
+
+.custom-add-cart-message .el-message__content {
+  color: white !important;
+  line-height: 1.4 !important;
+}
+
+.custom-add-cart-message .el-message__closeBtn {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.custom-add-cart-message .el-message__closeBtn:hover {
+  color: white !important;
+}
 </style>
