@@ -411,31 +411,19 @@ onMounted(() => {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 2px solid transparent;
   position: relative;
+  transform: scale(1);
 }
 
 .category-item:hover {
-  transform: translateY(-2px);
+  transform: translateY(-2px) scale(1.05);
   box-shadow: 0 4px 20px rgba(0,0,0,0.12);
 }
 
 .category-item.active {
-  background: white;
+  background: #667eea;
   border: 2px solid #667eea;
-  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.15);
-  transform: translateY(-2px);
-}
-
-.category-item.active::before {
-  content: '';
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  border-radius: 22px;
-  z-index: -1;
-  opacity: 0.1;
+  box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4), 0 2px 10px rgba(0,0,0,0.15);
+  transform: translateY(-3px) scale(1.1);
 }
 
 .category-icon {
@@ -446,8 +434,9 @@ onMounted(() => {
 }
 
 .category-item.active .category-icon {
-  color: #667eea;
+  color: white;
   transform: scale(1.1);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
 .category-name {
@@ -459,22 +448,9 @@ onMounted(() => {
 }
 
 .category-item.active .category-name {
-  color: #667eea;
+  color: white;
   font-weight: 600;
-}
-
-/* 添加选中指示器 */
-.category-item.active::after {
-  content: '';
-  position: absolute;
-  bottom: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 6px;
-  height: 6px;
-  background: #667eea;
-  border-radius: 50%;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 
 /* 移动端优化 */
