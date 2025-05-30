@@ -27,9 +27,15 @@ const currentRoute = computed(() => route.path)
 const navItems = computed(() => [
   {
     name: 'home',
-    path: '/menu',
+    path: '/',
     icon: '🏠',
     label: '首页'
+  },
+  {
+    name: 'menu',
+    path: '/menu',
+    icon: '📋',
+    label: '菜单'
   },
   {
     name: 'cart',

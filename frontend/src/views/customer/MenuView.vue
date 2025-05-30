@@ -92,17 +92,12 @@
       </div>
     </div>
 
-    <!-- 购物车悬浮按钮 - 优化样式 -->
-    <div class="cart-float" @click="goToCart">
-      <div class="cart-btn">
-        <div class="cart-icon">🛒</div>
-        <div class="cart-badge" v-if="cartItemCount > 0">{{ cartItemCount }}</div>
-      </div>
-    </div>
+    <!-- 底部导航 -->
+    <BottomNavigation />
   </div>
 </template>
 
-<script>
+<script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
