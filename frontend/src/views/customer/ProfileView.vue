@@ -2,16 +2,15 @@
   <div class="profile-container">
     <!-- 头部 -->
     <div class="profile-header">
-      <button class="home-btn" @click="goToHome">
-        <span class="home-icon">🏠</span>
-      </button>
-      <div class="user-info">
-        <div class="avatar">
-          <span class="avatar-icon">👤</span>
-        </div>
-        <div class="user-details">
-          <h2 class="username">用户{{ tableNumber }}</h2>
-          <p class="table-info">{{ tableDisplay }}</p>
+      <div class="header-content">
+        <div class="user-info">
+          <div class="avatar">
+            <span class="avatar-icon">👤</span>
+          </div>
+          <div class="user-details">
+            <h1 class="page-title">用户{{ tableNumber }}</h1>
+            <p class="page-subtitle">{{ tableDisplay }}</p>
+          </div>
         </div>
       </div>
     </div>
@@ -403,13 +402,7 @@ onMounted(() => {
   cartStore.restoreFromStorage()
 })
 
-// 添加跳转到首页的方法
-const goToHome = () => {
-  router.push({
-    path: '/',
-    query: route.query
-  })
-}
+
 </script>
 
 <style scoped>
@@ -422,55 +415,30 @@ const goToHome = () => {
 .profile-header {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
-  padding: 30px 20px;
+  padding: 20px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  position: relative;
 }
 
-.home-btn {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
+.header-content {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-  z-index: 10;
-}
-
-.home-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
-}
-
-.home-icon {
-  font-size: 18px;
-  color: white;
+  flex-direction: column;
 }
 
 .user-info {
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-left: 60px; /* 为Home按钮留出空间 */
 }
 
 .avatar {
-  width: 60px;
-  height: 60px;
+  width: 50px;
+  height: 50px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 20px;
   color: white;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
@@ -479,14 +447,14 @@ const goToHome = () => {
   flex: 1;
 }
 
-.username {
+.page-title {
   margin: 0 0 4px 0;
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 700;
   color: #333;
 }
 
-.table-info {
+.page-subtitle {
   margin: 0;
   color: #666;
   font-size: 14px;
@@ -730,6 +698,146 @@ const goToHome = () => {
   color: #666;
 }
 
+/* 弹窗关闭按钮样式 */
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  padding: 8px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+/* 当前订单弹窗样式 */
+.current-order-info {
+  padding: 24px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  color: #666;
+  font-weight: 500;
+  font-size: 15px;
+}
+
+.info-value {
+  color: #333;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.status-active {
+  color: #28a745;
+  background: rgba(40, 167, 69, 0.1);
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.current-order-items {
+  padding: 24px;
+}
+
+.items-title {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.order-items-list {
+  margin-bottom: 20px;
+}
+
+.order-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.order-item-row:last-child {
+  border-bottom: none;
+}
+
+.item-name {
+  flex: 1;
+  font-weight: 500;
+  color: #333;
+}
+
+.item-quantity {
+  color: #666;
+  margin: 0 16px;
+  font-size: 14px;
+}
+
+.item-price {
+  font-weight: 600;
+  color: #ff6b6b;
+}
+
+.order-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  border-top: 2px solid rgba(0, 0, 0, 0.1);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.total-label {
+  color: #333;
+}
+
+.total-amount {
+  color: #ff6b6b;
+}
+
+.empty-order {
+  text-align: center;
+  padding: 60px 24px;
+  color: #999;
+}
+
+.empty-order .empty-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+  opacity: 0.5;
+}
+
+.empty-order .empty-text {
+  font-size: 16px;
+}
+
 .orders-list {
   max-height: 400px;
   overflow-y: auto;
@@ -830,7 +938,7 @@ const goToHome = () => {
 /* 响应式优化 */
 @media (max-width: 480px) {
   .profile-header {
-    padding: 20px 16px;
+    padding: 16px;
   }
   
   .current-bill-section,
@@ -898,26 +1006,7 @@ const goToHome = () => {
   overflow-y: auto;
 }
 
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 24px;
-  color: rgba(255, 255, 255, 0.8);
-  cursor: pointer;
-  padding: 0;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-}
 
-.close-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-}
 
 /* 服务选项样式 */
 .service-options {
@@ -946,10 +1035,34 @@ const goToHome = () => {
   margin-bottom: 0;
 }
 
+/* 服务选项样式优化 */
+.service-item {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  margin-bottom: 16px;
+  background: #f8f9fa;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.service-item:hover {
+  background: rgba(102, 126, 234, 0.1);
+  border-color: #667eea;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+}
+
+.service-item:last-child {
+  margin-bottom: 0;
+}
+
 .service-icon {
-  font-size: 24px;
-  margin-right: 16px;
-  width: 40px;
+  font-size: 28px;
+  margin-right: 20px;
+  width: 50px;
   text-align: center;
 }
 
@@ -960,7 +1073,8 @@ const goToHome = () => {
 .service-title {
   font-weight: 600;
   color: #333;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  font-size: 16px;
 }
 
 .service-desc {
@@ -993,6 +1107,43 @@ const goToHome = () => {
 .detail-value {
   color: #333;
   font-weight: 600;
+}
+
+/* 桌台信息弹窗样式 */
+.table-info-details {
+  padding: 24px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.table-qr-info {
+  padding: 24px;
+  text-align: center;
+  background: rgba(102, 126, 234, 0.05);
+}
+
+.qr-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.qr-desc {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.5;
 }
 
 /* 当前订单详情样式 */
@@ -1076,6 +1227,35 @@ const goToHome = () => {
   
   .service-option {
     padding: 12px;
+  }
+  
+  .current-order-info,
+  .current-order-items,
+  .table-info-details,
+  .table-qr-info {
+    padding: 20px;
+  }
+  
+  .service-item {
+    padding: 16px;
+  }
+  
+  .service-icon {
+    font-size: 24px;
+    margin-right: 16px;
+    width: 40px;
+  }
+  
+  .order-total-row {
+    font-size: 16px;
+  }
+  
+  .empty-order {
+    padding: 40px 20px;
+  }
+  
+  .empty-order .empty-icon {
+    font-size: 48px;
   }
 }
 </style>

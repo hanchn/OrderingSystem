@@ -2,9 +2,6 @@
   <div class="home-container">
     <!-- 头部欢迎区域 -->
     <div class="welcome-header">
-      <button class="home-btn current-page" disabled>
-        <span class="home-icon">🏠</span>
-      </button>
       <div class="welcome-content">
         <div class="restaurant-info">
           <h1 class="restaurant-name">美味餐厅</h1>
@@ -22,7 +19,7 @@
     </div>
 
     <!-- 快捷操作区 -->
-    <div class="quick-actions">
+    <!-- <div class="quick-actions">
       <div class="action-item" @click="goToMenu">
         <div class="action-icon">📋</div>
         <div class="action-text">查看菜单</div>
@@ -40,7 +37,7 @@
         <div class="action-icon">👤</div>
         <div class="action-text">个人中心</div>
       </div>
-    </div>
+    </div> -->
 
     <!-- 热销菜品 -->
     <div class="section hot-dishes">
@@ -329,12 +326,12 @@ onMounted(() => {
   padding-bottom: 70px;
 }
 
-/* 头部欢迎区域 */
+/* 头部欢迎区域 - 只优化padding */
 .welcome-header {
   position: relative;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
-  padding: 30px 20px;
+  padding: 20px; /* 从30px减少到20px */
   margin-bottom: 20px;
   overflow: hidden;
 }
@@ -421,19 +418,28 @@ onMounted(() => {
 }
 
 .action-item:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.action-item:active {
+  transform: translateY(-1px);
 }
 
 .action-icon {
-  font-size: 24px;
+  font-size: 28px;
   margin-bottom: 8px;
+  transition: transform 0.3s ease;
+}
+
+.action-item:hover .action-icon {
+  transform: scale(1.1);
 }
 
 .action-text {
   font-size: 12px;
-  color: #333;
   font-weight: 500;
+  color: #333;
 }
 
 .action-badge {
@@ -443,31 +449,41 @@ onMounted(() => {
   background: #e74c3c;
   color: white;
   border-radius: 50%;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 10px;
   font-weight: bold;
+  animation: pulse 2s infinite;
 }
 
-/* 通用区块样式 */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* 内容区域样式 */
 .section {
   margin-bottom: 30px;
-  padding: 0 20px;
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  padding: 0 20px 15px;
 }
 
 .section-title {
   display: flex;
   align-items: center;
+  gap: 8px;
   font-size: 18px;
   font-weight: 600;
   color: white;
@@ -475,7 +491,6 @@ onMounted(() => {
 }
 
 .title-icon {
-  margin-right: 8px;
   font-size: 20px;
 }
 
@@ -484,7 +499,7 @@ onMounted(() => {
   color: white;
   border: none;
   padding: 6px 12px;
-  border-radius: 20px;
+  border-radius: 12px;
   font-size: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -494,26 +509,18 @@ onMounted(() => {
   background: rgba(255, 255, 255, 0.3);
 }
 
-/* 热销菜品 */
+/* 热销菜品样式 */
 .dishes-scroll {
   display: flex;
-  gap: 16px;
+  gap: 15px;
+  padding: 0 20px;
   overflow-x: auto;
-  padding-bottom: 10px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .dishes-scroll::-webkit-scrollbar {
-  height: 4px;
-}
-
-.dishes-scroll::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
-}
-
-.dishes-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 2px;
+  display: none;
 }
 
 .dish-card.horizontal {
@@ -521,14 +528,14 @@ onMounted(() => {
   background: white;
   border-radius: 16px;
   overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .dish-card.horizontal:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
 }
 
 .dish-card .dish-image {
@@ -547,37 +554,29 @@ onMounted(() => {
   position: absolute;
   top: 8px;
   left: 8px;
-  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+  background: #ff6b6b;
   color: white;
-  padding: 4px 8px;
-  border-radius: 12px;
+  padding: 2px 8px;
+  border-radius: 8px;
   font-size: 10px;
   font-weight: bold;
 }
 
-.dish-card .dish-info {
-  padding: 16px;
+.dish-info {
+  padding: 15px;
 }
 
-.dish-card .dish-name {
+.dish-name {
   font-size: 16px;
   font-weight: 600;
   color: #333;
   margin: 0 0 8px 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
-.dish-card .dish-desc {
+.dish-desc {
   font-size: 12px;
   color: #666;
-  margin: 0 0 12px 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  margin: 0 0 10px 0;
   line-height: 1.4;
 }
 
@@ -599,55 +598,60 @@ onMounted(() => {
 }
 
 .price {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   color: #ff6b6b;
 }
 
 .add-btn {
-  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+  background: #ff6b6b;
   color: white;
   border: none;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .add-btn:hover {
-  transform: scale(1.05);
+  background: #ff5252;
+  transform: scale(1.1);
 }
 
-/* 店长推荐 */
+/* 店长推荐样式 */
 .recommended-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
+  gap: 15px;
+  padding: 0 20px;
 }
 
 .dish-card.featured {
   background: white;
   border-radius: 16px;
   overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .dish-card.featured:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
 }
 
 .recommended-badge {
   position: absolute;
   top: 8px;
   right: 8px;
-  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+  background: #667eea;
   color: white;
-  padding: 4px 8px;
-  border-radius: 12px;
+  padding: 2px 8px;
+  border-radius: 8px;
   font-size: 10px;
   font-weight: bold;
 }
@@ -655,47 +659,60 @@ onMounted(() => {
 .dish-tags {
   display: flex;
   gap: 6px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .tag {
-  background: #f8f9fa;
+  background: #f0f0f0;
   color: #666;
   padding: 2px 6px;
-  border-radius: 8px;
+  border-radius: 6px;
   font-size: 10px;
 }
 
-/* 分类导航 */
+.dish-card.featured .add-btn {
+  width: auto;
+  height: auto;
+  padding: 6px 12px;
+  border-radius: 12px;
+}
+
+.btn-text {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* 分类导航样式 */
 .categories-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+  padding: 0 20px;
 }
 
 .category-card {
   background: white;
   border-radius: 16px;
-  padding: 20px 16px;
+  padding: 20px 12px;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .category-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 .category-icon {
   font-size: 32px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .category-name {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   color: #333;
   margin-bottom: 4px;
 }
@@ -705,33 +722,39 @@ onMounted(() => {
   color: #999;
 }
 
-/* 今日特惠 */
+/* 今日特惠样式 */
 .offers-list {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
+  gap: 15px;
+  padding: 0 20px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.offers-list::-webkit-scrollbar {
+  display: none;
 }
 
 .offer-card {
+  min-width: 250px;
   background: white;
   border-radius: 16px;
   overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  display: flex;
 }
 
 .offer-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
 }
 
 .offer-image {
   position: relative;
-  width: 100px;
   height: 100px;
-  flex-shrink: 0;
+  overflow: hidden;
 }
 
 .offer-image img {
@@ -743,18 +766,17 @@ onMounted(() => {
 .discount-badge {
   position: absolute;
   top: 8px;
-  left: 8px;
-  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  right: 8px;
+  background: #e74c3c;
   color: white;
   padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 10px;
+  border-radius: 8px;
+  font-size: 12px;
   font-weight: bold;
 }
 
 .offer-info {
-  padding: 16px;
-  flex: 1;
+  padding: 15px;
 }
 
 .offer-title {
@@ -791,18 +813,20 @@ onMounted(() => {
 
 /* 响应式优化 */
 @media (max-width: 480px) {
-  .welcome-content {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
+  .welcome-header {
+    padding: 16px; /* 移动端进一步减少 */
   }
   
-  .welcome-time {
-    text-align: left;
+  .restaurant-name {
+    font-size: 20px;
+  }
+  
+  .time-text {
+    font-size: 16px;
   }
   
   .quick-actions {
-    grid-template-columns: repeat(2, 1fr);
+    padding: 0 16px;
     gap: 12px;
   }
   
@@ -810,21 +834,28 @@ onMounted(() => {
     padding: 16px 8px;
   }
   
-  .recommended-grid {
-    grid-template-columns: 1fr;
+  .action-icon {
+    font-size: 24px;
+  }
+  
+  .action-text {
+    font-size: 11px;
+  }
+  
+  .section-header {
+    padding: 0 16px 15px;
+  }
+  
+  .dishes-scroll, .offers-list {
+    padding: 0 16px;
+  }
+  
+  .recommended-grid, .categories-grid {
+    padding: 0 16px;
   }
   
   .categories-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .offer-card {
-    flex-direction: column;
-  }
-  
-  .offer-image {
-    width: 100%;
-    height: 120px;
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 </style>

@@ -1,23 +1,21 @@
 <template>
   <div class="menu-container">
-    <!-- 桌号显示 -->
-    <div class="table-info">
-      <button class="home-btn" @click="goToHome">
-        <span class="home-icon">🏠</span>
-      </button>
-      <div class="table-badge">
-        <span class="table-icon">🍽️</span>
-        <span class="table-text">{{ tableDisplay }}</span>
+    <!-- 头部 -->
+    <div class="menu-header">
+      <div class="header-content">
+        <h1 class="page-title">点餐菜单</h1>
+        <p class="page-subtitle">美味餐厅 · {{ tableDisplay }}</p>
       </div>
     </div>
 
-    <!-- 分类导航 - 优化样式 -->
+    <!-- 分类导航 - 添加 ref -->
     <div class="category-nav">
-      <div class="category-scroll">
+      <div class="category-scroll" ref="categoryScrollRef">
         <div 
           v-for="category in categories" 
           :key="category.id"
           :class="['category-item', { active: activeCategory === category.id.toString() }]"
+          :data-category-id="category.id"
           @click="switchCategory(category.id.toString())"
         >
           <span class="category-icon">{{ category.icon }}</span>
@@ -38,9 +36,10 @@
       <div class="swipe-hint">← 左右滑动切换分类 →</div>
     </div>
 
-    <!-- 菜品列表 - 优化滑动交互 -->
+    <!-- 菜品列表 - 添加 ref -->
     <div 
       class="dishes-container"
+      ref="dishesContainerRef"
       @touchstart="handleTouchStart"
       @touchmove="handleTouchMove"
       @touchend="handleTouchEnd"
@@ -312,20 +311,49 @@ onMounted(() => {
   loadDishes()
   cartItems.value = cartManager.getItems()
 })
-// 添加跳转到首页的方法
-const goToHome = () => {
-  router.push({
-    path: '/',
-    query: route.query
-  })
-}
+// 移除 goToHome 方法
+// const goToHome = () => {
+//   router.push({
+//     path: '/',
+//     query: route.query
+//   })
+// }
 </script>
 
 <style scoped>
 .menu-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  padding: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding-bottom: 70px;
+}
+
+.menu-header {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #333;
+}
+
+.page-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
 }
 
 /* 桌号显示优化 */
@@ -350,17 +378,18 @@ const goToHome = () => {
   font-size: 24px;
 }
 
-/* 分类导航优化 */
+/* 分类导航优化 - 现代化设计 */
 .category-nav {
   padding: 0 20px;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
+  margin-top: 20px; /* 增加顶部间距 */
 }
 
 .category-scroll {
   display: flex;
-  gap: 12px;
+  gap: 15px;
   overflow-x: auto;
-  padding: 10px 0;
+  padding: 15px 0;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -373,32 +402,100 @@ const goToHome = () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 80px;
-  padding: 12px 8px;
+  min-width: 85px;
+  padding: 16px 12px;
   background: white;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-radius: 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 2px solid transparent;
+  position: relative;
+}
+
+.category-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
 }
 
 .category-item.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: white;
+  border: 2px solid #667eea;
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.15);
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.category-item.active::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 22px;
+  z-index: -1;
+  opacity: 0.1;
 }
 
 .category-icon {
-  font-size: 24px;
-  margin-bottom: 4px;
+  font-size: 28px;
+  margin-bottom: 6px;
+  transition: all 0.3s ease;
+  color: #666;
+}
+
+.category-item.active .category-icon {
+  color: #667eea;
+  transform: scale(1.1);
 }
 
 .category-name {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   text-align: center;
+  color: #666;
+  transition: all 0.3s ease;
+}
+
+.category-item.active .category-name {
+  color: #667eea;
+  font-weight: 600;
+}
+
+/* 添加选中指示器 */
+.category-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 6px;
+  background: #667eea;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+}
+
+/* 移动端优化 */
+@media (max-width: 480px) {
+  .category-nav {
+    margin-top: 15px;
+    padding: 0 15px;
+  }
+  
+  .category-item {
+    min-width: 75px;
+    padding: 14px 10px;
+  }
+  
+  .category-icon {
+    font-size: 24px;
+  }
+  
+  .category-name {
+    font-size: 12px;
+  }
 }
 
 /* 滑动指示器 */

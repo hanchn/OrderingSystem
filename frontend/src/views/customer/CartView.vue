@@ -2,16 +2,10 @@
   <div class="cart-container">
     <!-- 头部 -->
     <div class="cart-header">
-      <button class="home-btn" @click="goToHome">
-        <span class="home-icon">🏠</span>
-      </button>
-      <button class="back-btn" @click="goBack">
-        <span class="back-icon">←</span>
-      </button>
-      <h1 class="page-title">购物车</h1>
-      <button class="clear-btn" @click="clearCart" v-if="cartItems.length > 0">
-        清空
-      </button>
+      <div class="header-content">
+        <h1 class="page-title">购物车</h1>
+        <p class="page-subtitle">{{ tableDisplay }}</p>
+      </div>
     </div>
 
     <!-- 购物车内容 -->
@@ -131,13 +125,17 @@ onMounted(() => {
   cartStore.restoreFromStorage()
 })
 
-// 添加跳转到首页的方法
-const goToHome = () => {
-  router.push({
-    path: '/',
-    query: route.query
-  })
-}
+// 移除 goToHome 和 goBack 方法
+// const goToHome = () => {
+//   router.push({
+//     path: '/',
+//     query: route.query
+//   })
+// }
+
+// const goBack = () => {
+//   router.back()
+// }
 </script>
 
 <style scoped>
@@ -148,18 +146,51 @@ const goToHome = () => {
 }
 
 .cart-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
+  padding: 20px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   position: sticky;
   top: 0;
   z-index: 100;
 }
 
+.header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #333;
+}
+
+.page-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.clear-btn {
+  background: #ff6b6b;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.clear-btn:hover {
+  background: #ff5252;
+  transform: translateY(-1px);
+}
+
+/* 移除 home-btn 和 back-btn 相关样式 */
 .home-btn {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
