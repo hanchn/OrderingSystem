@@ -57,6 +57,7 @@
             v-for="dish in filteredDishes" 
             :key="dish.id" 
             class="dish-card"
+            @click="goToDishDetail(dish.id)"
           >
             <div class="dish-image-container">
               <img 
@@ -362,6 +363,10 @@ onMounted(() => {
 //     query: route.query
 //   })
 // }
+// 跳转到菜品详情页
+const goToDishDetail = (dishId) => {
+  router.push(`/dish/${dishId}`)
+}
 </script>
 
 <style scoped>

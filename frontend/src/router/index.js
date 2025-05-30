@@ -30,7 +30,14 @@ const router = createRouter({
       name: 'Profile',
       component: () => import('@/views/customer/ProfileView.vue'),
       meta: { title: '个人中心' }
-    }
+    },
+    // 在 routes 数组中添加菜品详情路由
+    {
+      path: '/dish/:id',
+      name: 'DishDetail',
+      component: () => import('@/views/customer/DishDetailView.vue'),
+      meta: { requiresAuth: false }
+    },
   ]
 })
 
