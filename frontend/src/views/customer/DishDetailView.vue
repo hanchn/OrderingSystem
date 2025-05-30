@@ -65,7 +65,6 @@
             <span class="label">过敏原：</span>
             <span class="value">{{ dish.allergens }}</span>
           </div>
-          <!-- 修复营养信息显示 -->
           <div class="detail-item" v-if="dish.nutrition && Object.keys(dish.nutrition).length > 0">
             <span class="label">营养信息：</span>
             <div class="nutrition-info">
@@ -88,7 +87,6 @@
             </div>
           </div>
           
-          <!-- 新增：菜品详细介绍 -->
           <div class="detail-item detail-introduction">
             <span class="label">详细介绍：</span>
             <div class="introduction-content">
@@ -106,25 +104,17 @@
       </div>
     </div>
 
-    <!-- 移除购物车浮动按钮 -->
-    <!-- <div class="cart-float" v-if="cartItemCount > 0" @click="goToCart">
-      <div class="cart-btn">
-        <span class="cart-icon">🛒</span>
-        <span class="cart-badge" v-if="cartItemCount">{{ cartItemCount }}</span>
-      </div>
-    </div> -->
-
     <!-- 数量选择和添加到购物车 -->
     <div class="action-section">
       <div class="quantity-selector">
         <button 
           class="quantity-btn minus" 
           @click="decreaseQuantity"
-          :disabled="dishQuantity <= 1"
+          :disabled="quantity <= 1"
         >
           -
         </button>
-        <span class="quantity">{{ dishQuantity }}</span>
+        <span class="quantity">{{ quantity }}</span>
         <button class="quantity-btn plus" @click="increaseQuantity">
           +
         </button>
@@ -132,8 +122,45 @@
       
       <button class="add-to-cart-btn" @click="addToCart">
         <span class="btn-text">加入购物车</span>
-        <span class="total-price">¥{{ (dish.price * dishQuantity).toFixed(2) }}</span>
+        <span class="total-price">¥{{ (dish.price * quantity).toFixed(2) }}</span>
       </button>
+    </div>
+
+    <!-- 加购成功弹窗 -->
+    <div v-if="showAddSuccess" class="add-success-overlay" @click="hideAddSuccess">
+      <div class="add-success-modal" @click.stop>
+        <div class="success-icon">
+          <div class="checkmark">
+            <div class="checkmark-circle"></div>
+            <div class="checkmark-stem"></div>
+            <div class="checkmark-kick"></div>
+          </div>
+        </div>
+        
+        <div class="success-content">
+          <h3 class="success-title">添加成功！</h3>
+          <p class="success-message">
+            <span class="dish-name">{{ dish.name }}</span> 
+            <span class="quantity-text">x{{ quantity }}</span>
+            已添加到购物车
+          </p>
+          
+          <!-- 重复点餐趣味提示 -->
+          <p v-if="dishOrderCount[dish.id] > quantity" class="repeat-order-tip">
+            <span class="emoji">😋</span>
+            我知道这道菜肯定很好吃，今天您已经第{{ Math.ceil(dishOrderCount[dish.id] / quantity) }}次点啦！
+          </p>
+          
+          <div class="success-actions">
+            <button class="continue-btn" @click="hideAddSuccess">
+              继续选购
+            </button>
+            <button class="cart-btn" @click="goToCart">
+              查看购物车
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -148,7 +175,7 @@ import { cartManager } from '@/utils/cart'
 const router = useRouter()
 const route = useRoute()
 
-// 初始化dish对象，避免布局错乱
+// 菜品信息
 const dish = ref({
   id: '',
   name: '加载中...',
@@ -159,22 +186,19 @@ const dish = ref({
   tags: [],
   nutrition: {}
 })
-// 删除第162行，重新输入
+
+// 数量和弹窗状态
 const quantity = ref(1)
+const showAddSuccess = ref(false)
+const dishOrderCount = ref({})
 
 // 购物车相关
 const cartItems = ref([])
-
-// 计算购物车商品数量
 const cartItemCount = computed(() => {
   return (cartItems.value || []).reduce((total, item) => total + item.quantity, 0)
 })
 
-// 跳转到购物车
-const goToCart = () => {
-  router.push({ path: '/cart', query: route.query })
-}
-
+// 标签映射
 const tagNames = {
   signature: '招牌',
   classic: '经典',
@@ -187,21 +211,36 @@ const getTagName = (tag) => {
   return tagNames[tag] || tag
 }
 
+// 导航函数
 const goBack = () => {
   router.back()
 }
 
+const goToCart = () => {
+  router.push({ path: '/cart', query: route.query })
+}
+
+// 图片错误处理
 const handleImageError = (e) => {
-  // 使用base64编码的占位符图片，确保始终可用
   e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDMwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjVGNUY1Ii8+Cjx0ZXh0IHg9IjE1MCIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiPue+j+WRs+S9s+iBlDwvdGV4dD4KPC9zdmc+'
 }
 
+// 数量控制
+const increaseQuantity = () => {
+  quantity.value++
+}
+
+const decreaseQuantity = () => {
+  if (quantity.value > 1) {
+    quantity.value--
+  }
+}
+
+// 加载菜品详情
 const loadDishDetail = async () => {
   try {
-    const dishId = parseInt(route.params.id)  // 确保ID为数字类型
+    const dishId = parseInt(route.params.id)
     console.log('加载菜品详情，ID:', dishId, '类型:', typeof dishId)
-    console.log('当前URL:', window.location.href)
-    console.log('是否测试模式:', new URLSearchParams(window.location.search).get('test') === '1')
     
     const response = await getDishDetail(dishId)
     console.log('API响应:', response)
@@ -209,7 +248,6 @@ const loadDishDetail = async () => {
     if (response.code === 200 && response.data) {
       dish.value = {
         ...response.data,
-        // 确保必要字段存在
         categoryName: response.data.categoryName || '未分类',
         tags: response.data.tags || [],
         nutrition: response.data.nutrition || {}
@@ -225,25 +263,18 @@ const loadDishDetail = async () => {
   }
 }
 
-// 在script setup部分，添加showAddSuccess声明
-const showAddSuccess = ref(false)
-const dishQuantity = ref(1)
-
-// 添加重复点餐统计
-const dishOrderCount = ref({})
-
-// 更新addToCart函数
+// 添加到购物车
 const addToCart = async () => {
   const dishId = dish.value.id
-  const dishName = dish.value.name
   
   // 统计点餐次数
   if (!dishOrderCount.value[dishId]) {
     dishOrderCount.value[dishId] = 0
   }
-  dishOrderCount.value[dishId] += dishQuantity.value
+  dishOrderCount.value[dishId] += quantity.value
   
-  for (let i = 0; i < dishQuantity.value; i++) {
+  // 添加到购物车
+  for (let i = 0; i < quantity.value; i++) {
     cartManager.addItem({
       id: dish.value.id,
       name: dish.value.name,
@@ -252,7 +283,7 @@ const addToCart = async () => {
     })
   }
   
-  // 显示优化后的成功提示
+  // 显示成功提示
   showAddSuccess.value = true
   
   // 3秒后自动隐藏
@@ -271,6 +302,7 @@ watch(() => cartManager.items, (newItems) => {
   cartItems.value = newItems || []
 }, { deep: true, immediate: true })
 
+// 组件挂载
 onMounted(() => {
   loadDishDetail()
 })
@@ -699,7 +731,6 @@ onMounted(() => {
   font-size: 20px;
 }
 
-<!-- 在模板最后添加加购成功弹窗 -->
 /* 加购成功弹窗样式 */
 .add-success-overlay {
   position: fixed;
