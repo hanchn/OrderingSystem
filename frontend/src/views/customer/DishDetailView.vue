@@ -71,6 +71,7 @@
         </div>
       </div>
     </div>
+    </div> <!-- Add this closing tag for the <div v-else> that starts at line 18 -->
 
     <!-- 数量选择和添加到购物车 -->
     <div class="action-section">
@@ -93,7 +94,6 @@
         <span class="total-price">¥{{ (dish.price * quantity).toFixed(2) }}</span>
       </button>
     </div>
-  </div>
 </template>
 
 <script setup>
@@ -197,34 +197,163 @@ const addToCart = () => {
 onMounted(() => {
   loadDishDetail()
 })
+
+
+// 购物车相关
+const cartItems = ref([])
+
+// 计算购物车商品数量
+const cartItemCount = computed(() => {
+  return cartItems.value.reduce((total, item) => total + item.quantity, 0)
+})
+
+// 跳转到购物车
+const goToCart = () => {
+  router.push({ path: '/cart', query: route.query })
+}
+
+// 监听购物车变化
+watch(() => cartManager.items, (newItems) => {
+  cartItems.value = newItems
+}, { deep: true, immediate: true })
 </script>
 
 <style scoped>
 .dish-detail-container {
   min-height: 100vh;
   background: #f8f9fa;
-  padding-bottom: 100px; /* 为底部按钮留出空间 */
+  padding-bottom: 100px;
 }
 
+/* 头部导航样式 */
+.detail-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: white;
+  border-bottom: 1px solid #eee;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: #f8f9fa;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.back-btn:hover {
+  background: #e9ecef;
+  transform: scale(1.05);
+}
+
+.back-icon {
+  font-size: 18px;
+  color: #333;
+  font-weight: bold;
+}
+
+.page-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.header-placeholder {
+  width: 40px;
+}
+
+/* 加载状态样式 */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  background: white;
+  margin: 20px;
+  border-radius: 12px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-container p {
+  color: #666;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* 图片区域样式 */
 .dish-image-section {
   position: relative;
   height: 300px;
   overflow: hidden;
-  background: #f0f0f0; /* 添加背景色，避免加载时空白 */
+  background: #f0f0f0;
 }
 
 .dish-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: opacity 0.3s ease; /* 添加过渡效果 */
+  transition: opacity 0.3s ease;
 }
 
+.image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.3) 100%);
+  display: flex;
+  align-items: flex-end;
+  padding: 20px;
+}
+
+.dish-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+  background: rgba(0,0,0,0.6);
+}
+
+/* 菜品信息样式 */
 .dish-info {
   background: white;
   padding: 20px;
   margin: 0;
-  border-radius: 0; /* 移除圆角，确保无缝连接 */
 }
 
 .dish-header {
@@ -232,7 +361,7 @@ onMounted(() => {
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 16px;
-  gap: 16px; /* 添加间距 */
+  gap: 16px;
 }
 
 .dish-name {
@@ -240,7 +369,7 @@ onMounted(() => {
   font-size: 24px;
   font-weight: 600;
   color: #333;
-  flex: 1; /* 允许名称占用剩余空间 */
+  flex: 1;
   line-height: 1.3;
 }
 
@@ -249,7 +378,7 @@ onMounted(() => {
   align-items: baseline;
   color: #e74c3c;
   font-weight: 600;
-  flex-shrink: 0; /* 防止价格被压缩 */
+  flex-shrink: 0;
 }
 
 .currency {
@@ -276,36 +405,10 @@ onMounted(() => {
   font-size: 15px;
 }
 
-/* 修复底部按钮区域 */
-.quantity-cart-section {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: white;
-  padding: 16px 20px;
-  border-top: 1px solid #eee;
-  box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-  z-index: 100;
+.dish-details {
+  margin-top: 20px;
 }
 
-/* 确保标签正确显示 */
-.dish-tags {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.tag {
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
-  color: white;
-  background: rgba(0,0,0,0.6);
-}
-
-/* 详情项样式优化 */
 .detail-item {
   display: flex;
   padding: 12px 0;
@@ -329,4 +432,144 @@ onMounted(() => {
   flex: 1;
   line-height: 1.4;
 }
+
+/* 操作区域样式 */
+.action-section {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  padding: 16px 20px;
+  border-top: 1px solid #eee;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.quantity-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f8f9fa;
+  border-radius: 25px;
+  padding: 8px 16px;
+}
+
+.quantity-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: #3498db;
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.quantity-btn:hover:not(:disabled) {
+  background: #2980b9;
+  transform: scale(1.05);
+}
+
+.quantity-btn:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.quantity {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  min-width: 20px;
+  text-align: center;
+}
+
+.add-to-cart-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-to-cart-btn:hover {
+  background: #c0392b;
+  transform: translateY(-1px);
+}
+
+.btn-text {
+  flex: 1;
+  text-align: left;
+}
+
+.total-price {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+      /* 购物车悬浮按钮 */
+      .cart-float {
+        position: fixed;
+        bottom: 120px; /* 避免与底部操作栏重叠 */
+        right: 20px;
+        z-index: 1000;
+      }
+      
+      .cart-btn {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 20px rgba(255, 107, 107, 0.4);
+        position: relative;
+      }
+      
+      .cart-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 25px rgba(255, 107, 107, 0.6);
+      }
+      
+      .cart-icon {
+        font-size: 24px;
+        color: white;
+      }
+      
+      .cart-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: #2ecc71;
+        color: white;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: bold;
+        border: 2px solid white;
+      }
 </style>
