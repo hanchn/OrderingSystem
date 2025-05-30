@@ -198,6 +198,7 @@ import { useCartStore } from '@/utils/cart'
 import { mockData } from '@/mock'
 import BottomNavigation from '@/components/BottomNavigation.vue'
 import AddToCartAnimation from '@/components/AddToCartAnimation.vue'
+import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const route = useRoute()
@@ -208,6 +209,7 @@ const categories = ref([])
 const hotDishes = ref([])
 const recommendedDishes = ref([])
 const specialOffers = ref([])
+const dishOrderCount = ref({})
 
 const tableDisplay = computed(() => {
   const { shopId, desk } = route.query
@@ -308,19 +310,39 @@ const callService = () => {
 }
 
 const addToCart = (dish, event) => {
-  cartStore.addItem(dish)
+  // 统计点餐次数
+  if (!dishOrderCount.value[dish.id]) {
+    dishOrderCount.value[dish.id] = 0
+  }
+  dishOrderCount.value[dish.id]++
   
-  // 触发动画 - 使用 nextTick 确保组件已挂载
-  nextTick(() => {
-    if (addToCartAnimationRef.value && event) {
-      try {
-        // 修改：使用 startAnimation 方法而不是 play 方法
-        addToCartAnimationRef.value.startAnimation(dish, event)
-      } catch (error) {
-        console.warn('Animation failed:', error)
-      }
+  // 先播放动画
+  if (addToCartAnimationRef.value && event) {
+    try {
+      addToCartAnimationRef.value.startAnimation(dish, event)
+    } catch (error) {
+      console.warn('Animation failed:', error)
     }
-  })
+  }
+  
+  // 延迟添加到购物车，让动画先开始
+  setTimeout(() => {
+    cartStore.addItem(dish)
+    
+    // 优化提示消息
+    let message = `${dish.name} 已添加到购物车`
+    if (dishOrderCount.value[dish.id] > 1) {
+      message += `\n😋 我知道这道菜肯定很好吃，今天您已经第${dishOrderCount.value[dish.id]}次点啦！`
+    }
+    
+    ElMessage({
+      message: message,
+      type: 'success',
+      duration: 3000,
+      showClose: true,
+      customClass: 'custom-add-cart-message'
+    })
+  }, 100)
 }
 
 const viewDishDetail = (dish) => {
@@ -1521,6 +1543,9 @@ onMounted(() => {
       font-weight: bold;
       border: 2px solid white;
     }
+</style>
+
+<style>
 /* 自定义添加购物车消息样式 */
 .custom-add-cart-message {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
