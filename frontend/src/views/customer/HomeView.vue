@@ -175,6 +175,16 @@
 
     <!-- 底部导航 -->
     <BottomNavigation />
+    
+    <!-- 购物车浮动按钮 -->
+    <div class="cart-float" v-if="cartItemCount > 0">
+      <div class="cart-btn" @click="viewCart">
+        <span class="cart-icon">🛒</span>
+        <div class="cart-badge" v-if="cartItemCount > 0">
+          {{ cartItemCount }}
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -300,8 +310,10 @@ const addToCart = (dish) => {
 }
 
 const viewDishDetail = (dish) => {
-  const detail = `${dish.name}\n\n${dish.description}\n\n价格：¥${dish.price}\n\n${dish.nutrition ? '营养信息：' + Object.entries(dish.nutrition).map(([key, value]) => `${key}: ${value}`).join(', ') : ''}`
-  alert(detail)
+  router.push({ 
+    path: `/dish/${dish.id}`, 
+    query: route.query 
+  })
 }
 
 const viewOfferDetail = (offer) => {

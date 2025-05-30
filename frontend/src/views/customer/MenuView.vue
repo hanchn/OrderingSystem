@@ -104,6 +104,16 @@
 
     <!-- 底部导航 -->
     <BottomNavigation />
+    
+    <!-- 购物车浮动按钮 -->
+    <div class="cart-float" v-if="cartItemCount > 0">
+      <div class="cart-btn" @click="goToCart">
+        <span class="cart-icon">🛒</span>
+        <div class="cart-badge" v-if="cartItemCount > 0">
+          {{ cartItemCount }}
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -197,9 +207,20 @@ const filteredDishes = computed(() => {
   )
 })
 
+// 计算属性
 const cartItemCount = computed(() => {
   return cartItems.value.reduce((total, item) => total + item.quantity, 0)
 })
+
+// 跳转到购物车
+const goToCart = () => {
+  router.push({ path: '/cart', query: route.query })
+}
+
+// 监听购物车变化
+watch(() => cartManager.items, (newItems) => {
+  cartItems.value = newItems
+}, { deep: true, immediate: true })
 
 // 初始化桌号信息
 const initTableInfo = () => {
@@ -277,13 +298,6 @@ const addToCart = (dish) => {
     showClose: false
   })
 }
-
-// 跳转到购物车
-const goToCart = () => {
-  router.push('/cart')
-}
-
-// 在 script setup 部分添加以下代码
 
 // 分类导航引用
 const categoryNavRef = ref(null)
