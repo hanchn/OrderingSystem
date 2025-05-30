@@ -89,9 +89,10 @@
                   <span class="currency">¥</span>
                   <span class="price">{{ dish.price }}</span>
                 </div>
+                <!-- 将原来的 @click.stop="addToCart(dish)" 改为 -->
                 <button 
                   class="add-btn"
-                  @click.stop="addToCart(dish)"
+                  @click.stop="addToCart(dish, $event)"
                 >
                   <span class="btn-icon">+</span>
                 </button>
@@ -125,6 +126,7 @@ import { getCategories, getDishes } from '@/api/dish'
 import { useCartStore } from '@/utils/cart'
 import { tableManager } from '@/utils/table'
 import BottomNavigation from '@/components/BottomNavigation.vue'
+import AddToCartAnimation from '@/components/AddToCartAnimation.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -322,9 +324,17 @@ const goToDishDetail = (dishId) => {
 // 在 goToDishDetail 方法后面添加
 
 // 添加商品到购物车
-const addToCart = (dish) => {
-  cartStore.addItem(dish)
-  ElMessage.success(`${dish.name} 已添加到购物车`)
+const addToCart = (dish, event) => {
+  // 先播放动画
+  if (addToCartAnimationRef.value) {
+    addToCartAnimationRef.value.startAnimation(dish, event)
+  }
+  
+  // 延迟添加到购物车，让动画先开始
+  setTimeout(() => {
+    cartStore.addItem(dish)
+    ElMessage.success(`${dish.name} 已添加到购物车`)
+  }, 100)
 }
 </script>
 

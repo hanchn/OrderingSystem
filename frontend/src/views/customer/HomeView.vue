@@ -185,6 +185,9 @@
         </div>
       </div>
     </div> -->
+    
+    <!-- 在模板最后添加动画组件 -->
+    <AddToCartAnimation ref="addToCartAnimationRef" />
   </div>
 </template>
 
@@ -221,6 +224,7 @@ const greeting = computed(() => {
   return '晚上好！'
 })
 
+const addToCartAnimationRef = ref(null)
 const cartItemCount = computed(() => cartStore.itemCount)
 
 const updateTime = () => {
@@ -303,11 +307,17 @@ const callService = () => {
   }
 }
 
-const addToCart = (dish) => {
+const addToCart = (dish, event) => {
   cartStore.addItem(dish)
-  // 添加视觉反馈
-  const event = new CustomEvent('cart-add', { detail: dish })
-  window.dispatchEvent(event)
+  
+  // 触发动画
+  if (addToCartAnimationRef.value && event) {
+    const rect = event.target.getBoundingClientRect()
+    addToCartAnimationRef.value.play({
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2
+    })
+  }
 }
 
 const viewDishDetail = (dish) => {
@@ -920,316 +930,7 @@ onMounted(() => {
       font-weight: bold;
       border: 2px solid white;
     }
-</style>
 
-<template>
-  <div class="home-container">
-    <!-- 头部欢迎区域 -->
-    <div class="welcome-header">
-      <div class="welcome-content">
-        <div class="restaurant-info">
-          <h1 class="restaurant-name">美味餐厅</h1>
-          <p class="table-info">{{ tableDisplay }}</p>
-        </div>
-        <div class="welcome-time">
-          <div class="time-text">{{ currentTime }}</div>
-          <div class="greeting">{{ greeting }}</div>
-        </div>
-      </div>
-      <div class="header-decoration">
-        <div class="decoration-circle"></div>
-        <div class="decoration-circle"></div>
-      </div>
-    </div>
-
-    <!-- 快捷操作区 -->
-    <!-- <div class="quick-actions">
-      <div class="action-item" @click="goToMenu">
-        <div class="action-icon">📋</div>
-        <div class="action-text">查看菜单</div>
-      </div>
-      <div class="action-item" @click="callService">
-        <div class="action-icon">🔔</div>
-        <div class="action-text">呼叫服务</div>
-      </div>
-      <div class="action-item" @click="viewCart">
-        <div class="action-icon">🛒</div>
-        <div class="action-text">购物车</div>
-        <div class="action-badge" v-if="cartItemCount > 0">{{ cartItemCount }}</div>
-      </div>
-      <div class="action-item" @click="viewProfile">
-        <div class="action-icon">👤</div>
-        <div class="action-text">个人中心</div>
-      </div>
-    </div> -->
-
-    <!-- 热销菜品 -->
-    <div class="section hot-dishes">
-      <div class="section-header">
-        <h2 class="section-title">
-          <span class="title-icon">🔥</span>
-          热销菜品
-        </h2>
-        <button class="more-btn" @click="goToCategory('hot')">
-          更多 →
-        </button>
-      </div>
-      <div class="dishes-scroll">
-        <div 
-          v-for="dish in hotDishes" 
-          :key="dish.id"
-          class="dish-card horizontal"
-          @click="viewDishDetail(dish)"
-        >
-          <div class="dish-image">
-            <img :src="dish.image" :alt="dish.name" @error="handleImageError" />
-            <div class="hot-badge">🔥</div>
-          </div>
-          <div class="dish-info">
-            <h3 class="dish-name">{{ dish.name }}</h3>
-            <p class="dish-desc">{{ dish.description }}</p>
-            <div class="dish-stats">
-              <span class="sales">已售{{ dish.sales || 0 }}份</span>
-              <span class="rating">⭐ {{ dish.rating || 4.5 }}</span>
-            </div>
-            <div class="price-action">
-              <span class="price">¥{{ dish.price }}</span>
-              <button class="add-btn" @click.stop="addToCart(dish, $event)">
-                <span class="btn-icon">+</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 店长推荐 -->
-    <div class="section recommended">
-      <div class="section-header">
-        <h2 class="section-title">
-          <span class="title-icon">👨‍🍳</span>
-          店长推荐
-        </h2>
-        <button class="more-btn" @click="goToCategory('recommended')">
-          更多 →
-        </button>
-      </div>
-      <div class="recommended-grid">
-        <div 
-          v-for="dish in recommendedDishes" 
-          :key="dish.id"
-          class="dish-card featured"
-          @click="viewDishDetail(dish)"
-        >
-          <div class="dish-image">
-            <img :src="dish.image" :alt="dish.name" @error="handleImageError" />
-            <div class="recommended-badge">店长推荐</div>
-          </div>
-          <div class="dish-info">
-            <h3 class="dish-name">{{ dish.name }}</h3>
-            <p class="dish-desc">{{ dish.description }}</p>
-            <div class="dish-tags">
-              <span v-for="tag in dish.tags?.slice(0, 2)" :key="tag" class="tag">
-                {{ tag }}
-              </span>
-            </div>
-            <div class="price-action">
-              <span class="price">¥{{ dish.price }}</span>
-              <button class="add-btn" @click.stop="addToCart(dish, $event)">
-                <span class="btn-text">加入购物车</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 分类导航 -->
-    <div class="section categories">
-      <div class="section-header">
-        <h2 class="section-title">
-          <span class="title-icon">🍽️</span>
-          菜品分类
-        </h2>
-      </div>
-      <div class="categories-grid">
-        <div 
-          v-for="category in categories" 
-          :key="category.id"
-          class="category-card"
-          @click="goToCategory(category.id)"
-        >
-          <div class="category-icon">{{ category.icon }}</div>
-          <div class="category-name">{{ category.name }}</div>
-          <div class="category-count">{{ getCategoryDishCount(category.id) }}道菜</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 今日特惠 -->
-    <div class="section special-offers">
-      <div class="section-header">
-        <h2 class="section-title">
-          <span class="title-icon">💰</span>
-          今日特惠
-        </h2>
-      </div>
-      <div class="offers-list">
-        <div 
-          v-for="offer in specialOffers" 
-          :key="offer.id"
-          class="offer-card"
-          @click="viewOfferDetail(offer)"
-        >
-          <div class="offer-image">
-            <img :src="offer.image" :alt="offer.title" @error="handleImageError" />
-            <div class="discount-badge">{{ offer.discount }}</div>
-          </div>
-          <div class="offer-info">
-            <h3 class="offer-title">{{ offer.title }}</h3>
-            <p class="offer-desc">{{ offer.description }}</p>
-            <div class="offer-price">
-              <span class="original-price">¥{{ offer.originalPrice }}</span>
-              <span class="current-price">¥{{ offer.currentPrice }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 底部导航 -->
-    <BottomNavigation />
-    
-    <!-- 移除购物车浮动按钮 -->
-    <!-- <div class="cart-float" v-if="cartItemCount > 0">
-      <div class="cart-btn" @click="viewCart">
-        <span class="cart-icon">🛒</span>
-        <div class="cart-badge" v-if="cartItemCount > 0">
-          {{ cartItemCount }}
-        </div>
-      </div>
-    </div> -->
-  </div>
-</template>
-
-// 在 <mcfile name="HomeView.vue" path="/Users/yuanjing/Desktop/OrderingSystem/frontend/src/views/customer/HomeView.vue"></mcfile> 中集成动画：
-<template>
-  <!-- 在模板最后添加动画组件 -->
-  <AddToCartAnimation ref="addToCartAnimationRef" />
-</template>
-
-const cartItemCount = computed(() => cartStore.itemCount)
-
-const updateTime = () => {
-  const now = new Date()
-  currentTime.value = now.toLocaleTimeString('zh-CN', {
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
-
-const loadData = () => {
-  // 加载分类数据
-  categories.value = mockData.categories || []
-  
-  // 加载菜品数据
-  const dishes = mockData.dishes || []
-  
-  // 热销菜品 - 随机选择6道菜并添加销量数据
-  hotDishes.value = dishes
-    .slice(0, 6)
-    .map(dish => ({
-      ...dish,
-      sales: Math.floor(Math.random() * 100) + 50,
-      rating: (Math.random() * 1 + 4).toFixed(1)
-    }))
-  
-  // 店长推荐 - 选择4道菜
-  recommendedDishes.value = dishes.slice(6, 10)
-  
-  // 今日特惠
-  specialOffers.value = [
-    {
-      id: 1,
-      title: '双人套餐',
-      description: '精选两道主菜+两份小食+两杯饮品',
-      image: dishes[0]?.image || '',
-      originalPrice: 128,
-      currentPrice: 88,
-      discount: '7折'
-    },
-    {
-      id: 2,
-      title: '家庭聚餐',
-      description: '四道招牌菜+汤品+主食+饮品',
-      image: dishes[1]?.image || '',
-      originalPrice: 268,
-      currentPrice: 198,
-      discount: '8折'
-    }
-  ]
-}
-
-const getCategoryDishCount = (categoryId) => {
-  const dishes = mockData.dishes || []
-  return dishes.filter(dish => dish.categoryId === categoryId).length
-}
-
-const goToMenu = () => {
-  router.push({ path: '/menu', query: route.query })
-}
-
-const goToCategory = (categoryId) => {
-  router.push({ 
-    path: '/menu', 
-    query: { ...route.query, category: categoryId }
-  })
-}
-
-const viewCart = () => {
-  router.push({ path: '/cart', query: route.query })
-}
-
-const viewProfile = () => {
-  router.push({ path: '/profile', query: route.query })
-}
-
-const callService = () => {
-  if (confirm('确定要呼叫服务员吗？')) {
-    alert('已通知服务员，请稍等...')
-  }
-}
-
-const addToCart = (dish) => {
-  cartStore.addItem(dish)
-  // 添加视觉反馈
-  const event = new CustomEvent('cart-add', { detail: dish })
-  window.dispatchEvent(event)
-}
-
-const viewDishDetail = (dish) => {
-  router.push({ 
-    path: `/dish/${dish.id}`, 
-    query: route.query 
-  })
-}
-
-const viewOfferDetail = (offer) => {
-  alert(`${offer.title}\n\n${offer.description}\n\n原价：¥${offer.originalPrice}\n现价：¥${offer.currentPrice}\n优惠：${offer.discount}`)
-}
-
-const handleImageError = (event) => {
-  event.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjRjVGNUY1Ii8+Cjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjOTk5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7nvo7lkbPkvbPogZQ8L3RleHQ+Cjwvc3ZnPg=='
-}
-
-onMounted(() => {
-  loadData()
-  updateTime()
-  setInterval(updateTime, 60000) // 每分钟更新时间
-})
-</script>
-
-<style scoped>
 .home-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
