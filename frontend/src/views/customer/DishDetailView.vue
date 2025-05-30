@@ -38,40 +38,81 @@
         </div>
       </div>
 
-    <!-- 菜品信息 -->
-    <div class="dish-info">
-      <div class="dish-header">
-        <h2 class="dish-name">{{ dish.name }}</h2>
-        <div class="dish-price">
-          <span class="currency">¥</span>
-          <span class="price">{{ dish.price }}</span>
+      <!-- 菜品信息 -->
+      <div class="dish-info">
+        <div class="dish-header">
+          <h2 class="dish-name">{{ dish.name }}</h2>
+          <div class="dish-price">
+            <span class="currency">¥</span>
+            <span class="price">{{ dish.price }}</span>
+          </div>
         </div>
-      </div>
-      
-      <div class="dish-description">
-        <p>{{ dish.description || '暂无描述' }}</p>
-      </div>
+        
+        <div class="dish-description">
+          <p>{{ dish.description || '暂无描述' }}</p>
+        </div>
 
-      <div class="dish-details">
-        <div class="detail-item">
-          <span class="label">分类：</span>
-          <span class="value">{{ dish.categoryName }}</span>
-        </div>
-        <div class="detail-item" v-if="dish.ingredients">
-          <span class="label">主要食材：</span>
-          <span class="value">{{ dish.ingredients }}</span>
-        </div>
-        <div class="detail-item" v-if="dish.allergens">
-          <span class="label">过敏原：</span>
-          <span class="value">{{ dish.allergens }}</span>
-        </div>
-        <div class="detail-item" v-if="dish.nutrition">
-          <span class="label">营养信息：</span>
-          <span class="value">{{ dish.nutrition }}</span>
+        <div class="dish-details">
+          <div class="detail-item">
+            <span class="label">分类：</span>
+            <span class="value">{{ dish.categoryName }}</span>
+          </div>
+          <div class="detail-item" v-if="dish.ingredients">
+            <span class="label">主要食材：</span>
+            <span class="value">{{ dish.ingredients }}</span>
+          </div>
+          <div class="detail-item" v-if="dish.allergens">
+            <span class="label">过敏原：</span>
+            <span class="value">{{ dish.allergens }}</span>
+          </div>
+          <!-- 修复营养信息显示 -->
+          <div class="detail-item" v-if="dish.nutrition && Object.keys(dish.nutrition).length > 0">
+            <span class="label">营养信息：</span>
+            <div class="nutrition-info">
+              <div class="nutrition-item" v-if="dish.nutrition.calories">
+                <span class="nutrition-label">热量：</span>
+                <span class="nutrition-value">{{ dish.nutrition.calories }} 千卡</span>
+              </div>
+              <div class="nutrition-item" v-if="dish.nutrition.protein">
+                <span class="nutrition-label">蛋白质：</span>
+                <span class="nutrition-value">{{ dish.nutrition.protein }}g</span>
+              </div>
+              <div class="nutrition-item" v-if="dish.nutrition.fat">
+                <span class="nutrition-label">脂肪：</span>
+                <span class="nutrition-value">{{ dish.nutrition.fat }}g</span>
+              </div>
+              <div class="nutrition-item" v-if="dish.nutrition.carbs">
+                <span class="nutrition-label">碳水化合物：</span>
+                <span class="nutrition-value">{{ dish.nutrition.carbs }}g</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 新增：菜品详细介绍 -->
+          <div class="detail-item detail-introduction">
+            <span class="label">详细介绍：</span>
+            <div class="introduction-content">
+              <p v-if="dish.detailedDescription">
+                {{ dish.detailedDescription }}
+              </p>
+              <p v-else>
+                {{ dish.name }}是我们精心制作的特色菜品，选用优质食材，经过传统工艺烹制而成。
+                口感丰富，营养均衡，是您用餐的绝佳选择。我们致力于为每一位顾客提供最优质的美食体验，
+                让您在品尝美味的同时，感受到我们对品质的坚持和对顾客的用心。
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-    </div> <!-- Add this closing tag for the <div v-else> that starts at line 18 -->
+
+    <!-- 添加购物车悬浮按钮 -->
+    <div class="cart-float" v-if="cartItemCount > 0" @click="goToCart">
+      <div class="cart-btn">
+        <span class="cart-icon">🛒</span>
+        <span class="cart-badge" v-if="cartItemCount">{{ cartItemCount }}</span>
+      </div>
+    </div>
 
     <!-- 数量选择和添加到购物车 -->
     <div class="action-section">
@@ -94,17 +135,19 @@
         <span class="total-price">¥{{ (dish.price * quantity).toFixed(2) }}</span>
       </button>
     </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getDishDetail } from '@/api/dish'  // 修改：getDishById -> getDishDetail
+import { getDishDetail } from '@/api/dish'
 import { cartManager } from '@/utils/cart'
 
 const router = useRouter()
 const route = useRoute()
+
 // 初始化dish对象，避免布局错乱
 const dish = ref({
   id: '',
@@ -117,6 +160,19 @@ const dish = ref({
   nutrition: {}
 })
 const quantity = ref(1)
+
+// 购物车相关
+const cartItems = ref([])
+
+// 计算购物车商品数量
+const cartItemCount = computed(() => {
+  return cartItems.value.reduce((total, item) => total + item.quantity, 0)
+})
+
+// 跳转到购物车
+const goToCart = () => {
+  router.push({ path: '/cart', query: route.query })
+}
 
 const tagNames = {
   signature: '招牌',
@@ -194,28 +250,14 @@ const addToCart = () => {
   }, 1000)
 }
 
-onMounted(() => {
-  loadDishDetail()
-})
-
-
-// 购物车相关
-const cartItems = ref([])
-
-// 计算购物车商品数量
-const cartItemCount = computed(() => {
-  return cartItems.value.reduce((total, item) => total + item.quantity, 0)
-})
-
-// 跳转到购物车
-const goToCart = () => {
-  router.push({ path: '/cart', query: route.query })
-}
-
 // 监听购物车变化
 watch(() => cartManager.items, (newItems) => {
   cartItems.value = newItems
 }, { deep: true, immediate: true })
+
+onMounted(() => {
+  loadDishDetail()
+})
 </script>
 
 <style scoped>
@@ -572,4 +614,56 @@ watch(() => cartManager.items, (newItems) => {
         font-weight: bold;
         border: 2px solid white;
       }
+
+/* 营养信息样式 */
+.nutrition-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.nutrition-item {
+  display: flex;
+  align-items: center;
+  background: #f8f9fa;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 13px;
+}
+
+.nutrition-label {
+  color: #666;
+  margin-right: 4px;
+}
+
+.nutrition-value {
+  color: #333;
+  font-weight: 500;
+}
+
+/* 详细介绍样式 */
+.detail-introduction {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.detail-introduction .label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.introduction-content {
+  margin-top: 12px;
+  line-height: 1.6;
+}
+
+.introduction-content p {
+  color: #666;
+  font-size: 14px;
+  margin: 0;
+  text-align: justify;
+}
 </style>
