@@ -9,26 +9,34 @@
       <div class="header-placeholder"></div>
     </div>
 
-    <!-- 菜品图片 -->
-    <div class="dish-image-section">
-      <img 
-        :src="dish.image" 
-        :alt="dish.name"
-        class="dish-image"
-        @error="handleImageError"
-      />
-      <div class="image-overlay">
-        <div class="dish-tags">
-          <span 
-            v-for="tag in dish.tags" 
-            :key="tag"
-            :class="['tag', `tag-${tag}`]"
-          >
-            {{ getTagName(tag) }}
-          </span>
+    <!-- 加载状态 -->
+    <div v-if="!dish.id" class="loading-container">
+      <div class="loading-spinner"></div>
+      <p>加载中...</p>
+    </div>
+
+    <!-- 菜品内容 -->
+    <div v-else>
+      <!-- 菜品图片 -->
+      <div class="dish-image-section">
+        <img 
+          :src="dish.image" 
+          :alt="dish.name"
+          class="dish-image"
+          @error="handleImageError"
+        />
+        <div class="image-overlay">
+          <div class="dish-tags">
+            <span 
+              v-for="tag in dish.tags" 
+              :key="tag"
+              :class="['tag', `tag-${tag}`]"
+            >
+              {{ getTagName(tag) }}
+            </span>
+          </div>
         </div>
       </div>
-    </div>
 
     <!-- 菜品信息 -->
     <div class="dish-info">
@@ -97,7 +105,17 @@ import { cartManager } from '@/utils/cart'
 
 const router = useRouter()
 const route = useRoute()
-const dish = ref({})
+// 初始化dish对象，避免布局错乱
+const dish = ref({
+  id: '',
+  name: '加载中...',
+  price: 0,
+  description: '',
+  image: '',
+  categoryName: '',
+  tags: [],
+  nutrition: {}
+})
 const quantity = ref(1)
 
 const tagNames = {
@@ -117,7 +135,31 @@ const goBack = () => {
 }
 
 const handleImageError = (e) => {
-  e.target.src = '/images/placeholder-dish.jpg'
+  // 使用base64编码的占位符图片，确保始终可用
+  e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDMwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjVGNUY1Ii8+Cjx0ZXh0IHg9IjE1MCIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiPue+j+WRs+S9s+iBlDwvdGV4dD4KPC9zdmc+'
+}
+
+const loadDishDetail = async () => {
+  try {
+    const dishId = parseInt(route.params.id)  // 确保ID为数字类型
+    const response = await getDishDetail(dishId)
+    if (response.code === 200 && response.data) {
+      dish.value = {
+        ...response.data,
+        // 确保必要字段存在
+        categoryName: response.data.categoryName || '未分类',
+        tags: response.data.tags || [],
+        nutrition: response.data.nutrition || {}
+      }
+    } else {
+      ElMessage.error('菜品不存在或已下架')
+      router.back()
+    }
+  } catch (error) {
+    console.error('加载菜品详情失败:', error)
+    ElMessage.error('网络错误，请稍后重试')
+    router.back()
+  }
 }
 
 const increaseQuantity = () => {
@@ -152,23 +194,6 @@ const addToCart = () => {
   }, 1000)
 }
 
-const loadDishDetail = async () => {
-  try {
-    const dishId = route.params.id
-    const response = await getDishDetail(dishId)  // 修改：getDishById -> getDishDetail
-    if (response.code === 200) {
-      dish.value = response.data
-    } else {
-      ElMessage.error('加载菜品详情失败')
-      router.back()
-    }
-  } catch (error) {
-    console.error('加载菜品详情失败:', error)
-    ElMessage.error('加载菜品详情失败')
-    router.back()
-  }
-}
-
 onMounted(() => {
   loadDishDetail()
 })
@@ -178,107 +203,28 @@ onMounted(() => {
 .dish-detail-container {
   min-height: 100vh;
   background: #f8f9fa;
-}
-
-.detail-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px;
-  background: white;
-  border-bottom: 1px solid #eee;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.back-btn {
-  background: none;
-  border: none;
-  font-size: 24px;
-  color: #333;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 50%;
-  transition: background-color 0.3s;
-}
-
-.back-btn:hover {
-  background-color: #f0f0f0;
-}
-
-.page-title {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
-}
-
-.header-placeholder {
-  width: 40px;
+  padding-bottom: 100px; /* 为底部按钮留出空间 */
 }
 
 .dish-image-section {
   position: relative;
   height: 300px;
   overflow: hidden;
+  background: #f0f0f0; /* 添加背景色，避免加载时空白 */
 }
 
 .dish-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-.image-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(transparent 60%, rgba(0,0,0,0.3));
-  display: flex;
-  align-items: flex-end;
-  padding: 20px;
-}
-
-.dish-tags {
-  display: flex;
-  gap: 8px;
-}
-
-.tag {
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 500;
-  color: white;
-}
-
-.tag-signature {
-  background: #ff6b6b;
-}
-
-.tag-classic {
-  background: #4ecdc4;
-}
-
-.tag-spicy {
-  background: #ff9f43;
-}
-
-.tag-new {
-  background: #a55eea;
-}
-
-.tag-recommended {
-  background: #26de81;
+  transition: opacity 0.3s ease; /* 添加过渡效果 */
 }
 
 .dish-info {
   background: white;
-  padding: 24px;
-  margin-bottom: 20px;
+  padding: 20px;
+  margin: 0;
+  border-radius: 0; /* 移除圆角，确保无缝连接 */
 }
 
 .dish-header {
@@ -286,159 +232,101 @@ onMounted(() => {
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 16px;
+  gap: 16px; /* 添加间距 */
 }
 
 .dish-name {
   margin: 0;
   font-size: 24px;
-  font-weight: 700;
+  font-weight: 600;
   color: #333;
-  flex: 1;
-  margin-right: 16px;
+  flex: 1; /* 允许名称占用剩余空间 */
+  line-height: 1.3;
 }
 
 .dish-price {
   display: flex;
   align-items: baseline;
   color: #e74c3c;
+  font-weight: 600;
+  flex-shrink: 0; /* 防止价格被压缩 */
 }
 
 .currency {
   font-size: 16px;
-  font-weight: 500;
+  margin-right: 2px;
 }
 
 .price {
   font-size: 28px;
-  font-weight: 700;
-  margin-left: 2px;
 }
 
 .dish-description {
   margin-bottom: 20px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #3498db;
+}
+
+.dish-description p {
+  margin: 0;
+  color: #666;
   line-height: 1.6;
-  color: #666;
+  font-size: 15px;
 }
 
-.dish-details {
-  border-top: 1px solid #eee;
-  padding-top: 16px;
-}
-
-.detail-item {
-  display: flex;
-  margin-bottom: 12px;
-  align-items: flex-start;
-}
-
-.label {
-  font-weight: 500;
-  color: #333;
-  min-width: 80px;
-  margin-right: 12px;
-}
-
-.value {
-  color: #666;
-  flex: 1;
-  line-height: 1.5;
-}
-
-.action-section {
+/* 修复底部按钮区域 */
+.quantity-cart-section {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   background: white;
-  padding: 20px;
+  padding: 16px 20px;
   border-top: 1px solid #eee;
-  display: flex;
-  align-items: center;
-  gap: 16px;
   box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+  z-index: 100;
 }
 
-.quantity-selector {
+/* 确保标签正确显示 */
+.dish-tags {
   display: flex;
-  align-items: center;
-  border: 1px solid #ddd;
-  border-radius: 25px;
-  overflow: hidden;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-.quantity-btn {
-  width: 40px;
-  height: 40px;
-  border: none;
-  background: white;
-  font-size: 18px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.quantity-btn:hover:not(:disabled) {
-  background-color: #f0f0f0;
-}
-
-.quantity-btn:disabled {
-  color: #ccc;
-  cursor: not-allowed;
-}
-
-.quantity {
-  padding: 0 16px;
-  font-size: 16px;
-  font-weight: 600;
-  min-width: 40px;
-  text-align: center;
-}
-
-.add-to-cart-btn {
-  flex: 1;
-  height: 50px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+.tag {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
   color: white;
-  border: none;
-  border-radius: 25px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
+  background: rgba(0,0,0,0.6);
+}
+
+/* 详情项样式优化 */
+.detail-item {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  transition: transform 0.2s;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+  align-items: flex-start;
 }
 
-.add-to-cart-btn:hover {
-  transform: translateY(-1px);
+.detail-item:last-child {
+  border-bottom: none;
 }
 
-.add-to-cart-btn:active {
-  transform: translateY(0);
+.label {
+  font-weight: 500;
+  color: #666;
+  min-width: 80px;
+  flex-shrink: 0;
 }
 
-.total-price {
-  font-size: 18px;
-  font-weight: 700;
-}
-
-@media (max-width: 480px) {
-  .dish-info {
-    padding: 20px 16px;
-  }
-  
-  .action-section {
-    padding: 16px;
-  }
-  
-  .dish-name {
-    font-size: 20px;
-  }
-  
-  .price {
-    font-size: 24px;
-  }
+.value {
+  color: #333;
+  flex: 1;
+  line-height: 1.4;
 }
 </style>
