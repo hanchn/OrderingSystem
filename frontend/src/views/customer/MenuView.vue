@@ -59,7 +59,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { dishApi } from '@/api/dish'
+import { getCategories, getDishes } from '@/api/dish'
 import { cartManager } from '@/utils/cart'
 import { tableManager } from '@/utils/table'
 
@@ -108,26 +108,27 @@ export default {
     // 方法
     const loadCategories = async () => {
       try {
-        const response = await dishApi.getCategories({
-          storeId: tableManager.getStoreId()
-        })
-        categories.value = response.data.data
-        if (categories.value.length > 0) {
-          activeCategory.value = categories.value[0].id.toString()
+        const response = await getCategories()
+        if (response.code === 200) {
+          categories.value = response.data
+          if (categories.value.length > 0) {
+            activeCategory.value = categories.value[0].id.toString()
+          }
         }
       } catch (error) {
+        console.error('加载分类失败:', error)
         ElMessage.error('加载分类失败')
       }
     }
 
     const loadDishes = async () => {
       try {
-        const response = await dishApi.getDishes({ 
-          status: 'active',
-          storeId: tableManager.getStoreId()
-        })
-        dishes.value = response.data.data.dishes
+        const response = await getDishes()
+        if (response.code === 200) {
+          dishes.value = response.data
+        }
       } catch (error) {
+        console.error('加载菜品失败:', error)
         ElMessage.error('加载菜品失败')
       }
     }
