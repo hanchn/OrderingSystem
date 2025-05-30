@@ -4,18 +4,10 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { onMounted } from 'vue'
-import { useAuthStore } from '@/stores/auth'
-
-const authStore = useAuthStore()
-
-onMounted(() => {
-  // 如果有token，获取用户信息
-  if (authStore.token) {
-    authStore.getUserInfo()
-  }
-})
+<script>
+export default {
+  name: 'App'
+}
 </script>
 
 <style>
