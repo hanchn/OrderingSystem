@@ -98,12 +98,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getCategories, getDishes } from '@/api/dish'
 import { cartManager } from '@/utils/cart'
 import { tableManager } from '@/utils/table'
+import BottomNavigation from '@/components/BottomNavigation.vue'
 
 export default {
   name: 'MenuView',
